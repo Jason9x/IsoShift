@@ -1,0 +1,19 @@
+import Point3D from '@/utils/coordinates/Point3D'
+import Tile from '@/modules/tile/Tile'
+
+import Cube from '@/modules/cube/Cube'
+import AvatarContainer from '@/modules/avatar/AvatarContainer'
+
+export default interface IAvatar {
+	currentTile: Tile | undefined
+	goalPosition: Point3D | null
+	isMoving: boolean
+
+	initialize(): void
+	calculatePath(isRecalculating?: boolean): Promise<void>
+	update(delta: number): Promise<void>
+	adjustPositionOnCubeDrag(cube: Cube): void
+
+	container: AvatarContainer | undefined
+	position: Point3D | undefined
+}
