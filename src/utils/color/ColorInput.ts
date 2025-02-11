@@ -1,7 +1,7 @@
 export default class ColorInput {
 	static #instance: ColorInput
 
-	static get instance(): ColorInput {
+	static get instance() {
 		return ColorInput.#instance || (ColorInput.#instance = new ColorInput())
 	}
 
@@ -16,6 +16,6 @@ export default class ColorInput {
 
 	addEventListener = (
 		type: string,
-		listener: EventListenerOrEventListenerObject,
-	): void => this.#inputElement?.addEventListener(type, listener)
+		listener: EventListenerOrEventListenerObject
+	) => this.#inputElement?.addEventListener(type, listener)
 }

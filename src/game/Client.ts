@@ -1,7 +1,8 @@
-import IScene from '@/interfaces/game/IScene'
-
 import { Application, IApplicationOptions } from 'pixi.js'
+
 import { inject, injectable } from 'inversify'
+
+import IScene from '@/interfaces/game/IScene'
 
 @injectable()
 export default class Client {
@@ -29,7 +30,7 @@ export default class Client {
 			backgroundColor: 0x000000,
 			antialias: false,
 			resolution: 1,
-			autoDensity: true,
+			autoDensity: true
 		}
 	}
 
@@ -39,7 +40,7 @@ export default class Client {
 	#setupEventListeners() {
 		window.addEventListener('resize', this.#handleWindowResize.bind(this))
 		window.addEventListener('contextmenu', (event: MouseEvent) =>
-			event.preventDefault(),
+			event.preventDefault()
 		)
 	}
 
@@ -48,9 +49,5 @@ export default class Client {
 
 		this.#application.renderer.resize(innerWidth, innerHeight)
 		this.#scene.centerStage(this.#application)
-	}
-
-	get application(): Application {
-		return this.#application
 	}
 }

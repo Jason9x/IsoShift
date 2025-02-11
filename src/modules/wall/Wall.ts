@@ -1,12 +1,15 @@
+import container from '@/inversify.config'
+
 import WallDirection from '@/modules/wall/WallDirection'
 import WallContainer from '@/modules/wall/WallContainer'
+
+import IWallMap from '@/interfaces/modules/IWallMap'
 
 import { FaceKey } from '@/types/BoxFaces.types'
 
 import Point3D from '@/utils/coordinates/Point3D'
 import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
-import container from '@/inversify.config'
-import IWallMap from '@/interfaces/modules/IWallMap'
+
 import createColorInput from '@/utils/helpers/colorInputHelper'
 
 export default class Wall {
@@ -19,33 +22,33 @@ export default class Wall {
 		this.#direction = direction
 		this.#container = new WallContainer(
 			cartesianToIsometric(this.#position),
-			this.#direction,
+			this.#direction
 		)
 
 		this.#setupEventListeners()
 	}
 
-	#setupEventListeners = (): void =>
+	#setupEventListeners = () =>
 		this.#container.sides.forEach(side =>
 			side.forEach((face, key) =>
-				face?.on('rightclick', this.#handleFaceClick.bind(this, key)),
-			),
+				face?.on('rightclick', this.#handleFaceClick.bind(this, key))
+			)
 		)
 
-	#handleFaceClick = (key: FaceKey): void =>
+	#handleFaceClick = (key: FaceKey) =>
 		createColorInput(hexColor =>
 			container
 				.get<IWallMap>('IWallMap')
 				.walls.forEach(
-					wall =>
-						wall.#direction === this.#direction &&
-						wall.#container.sides.forEach(side =>
-							side.get(key)?.initialize(hexColor),
-						),
-				),
+				wall =>
+					wall.#direction === this.#direction &&
+					wall.#container.sides.forEach(side =>
+						side.get(key)?.initialize(hexColor)
+					)
+			)
 		)
 
-	get container(): WallContainer {
+	get container() {
 		return this.#container
 	}
 }

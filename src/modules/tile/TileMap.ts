@@ -2,15 +2,15 @@ import { inject, injectable } from 'inversify'
 
 import { Container, Point } from 'pixi.js'
 
+import Wall from '../wall/Wall'
 import Tile from '@/modules/tile/Tile'
 
 import ITileMap from '@/interfaces/modules/ITileMap'
+import IWallMap from '@/interfaces/modules/IWallMap'
 
 import Point3D from '@/utils/coordinates/Point3D'
 
 import calculateWallDirections from '@/utils/calculations/calculateWallDirections'
-import IWallMap from '@/interfaces/modules/IWallMap'
-import Wall from '../wall/Wall'
 
 @injectable()
 export default class TileMap implements ITileMap {
@@ -21,7 +21,7 @@ export default class TileMap implements ITileMap {
 
 	constructor(
 		@inject('Grid') grid: number[][],
-		@inject('IWallMap') wallMap: IWallMap,
+		@inject('IWallMap') wallMap: IWallMap
 	) {
 		this.#grid = grid
 		this.#wallMap = wallMap
@@ -29,7 +29,7 @@ export default class TileMap implements ITileMap {
 		this.#container = new Container()
 	}
 
-	generate(): void {
+	generate() {
 		this.#grid.forEach((row, x) =>
 			row.forEach((z, y) => {
 				if (z === -1) return
@@ -47,7 +47,7 @@ export default class TileMap implements ITileMap {
 
 					this.#wallMap.addWall(wall)
 				})
-			}),
+			})
 		)
 	}
 

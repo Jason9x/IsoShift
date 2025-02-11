@@ -21,29 +21,29 @@ export default class AvatarContainer extends Container {
 				'top',
 				new PolygonGraphics(
 					AVATAR_COLORS.TOP_FACE,
-					this.#topFacePoints,
-				),
+					this.#topFacePoints
+				)
 			],
 			[
 				'left',
 				new PolygonGraphics(
 					AVATAR_COLORS.LEFT_FACE,
-					this.#leftFacePoints,
-				),
+					this.#leftFacePoints
+				)
 			],
 			[
 				'right',
 				new PolygonGraphics(
 					AVATAR_COLORS.RIGHT_FACE,
-					this.#rightFacePoints,
-				),
-			],
+					this.#rightFacePoints
+				)
+			]
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))
 	}
 
-	get #topFacePoints(): number[] {
+	get #topFacePoints() {
 		return [
 			0,
 			-AVATAR_DIMENSIONS.HEIGHT,
@@ -52,11 +52,11 @@ export default class AvatarContainer extends Container {
 			AVATAR_DIMENSIONS.WIDTH * 2,
 			-AVATAR_DIMENSIONS.HEIGHT,
 			AVATAR_DIMENSIONS.WIDTH,
-			-AVATAR_DIMENSIONS.HEIGHT + AVATAR_DIMENSIONS.WIDTH / 2,
+			-AVATAR_DIMENSIONS.HEIGHT + AVATAR_DIMENSIONS.WIDTH / 2
 		]
 	}
 
-	get #leftFacePoints(): number[] {
+	get #leftFacePoints() {
 		return [
 			0,
 			0,
@@ -65,11 +65,11 @@ export default class AvatarContainer extends Container {
 			AVATAR_DIMENSIONS.WIDTH,
 			-AVATAR_DIMENSIONS.HEIGHT + AVATAR_DIMENSIONS.WIDTH / 2,
 			AVATAR_DIMENSIONS.WIDTH,
-			AVATAR_DIMENSIONS.WIDTH / 2,
+			AVATAR_DIMENSIONS.WIDTH / 2
 		]
 	}
 
-	get #rightFacePoints(): number[] {
+	get #rightFacePoints() {
 		return [
 			AVATAR_DIMENSIONS.WIDTH,
 			AVATAR_DIMENSIONS.WIDTH / 2,
@@ -78,11 +78,11 @@ export default class AvatarContainer extends Container {
 			AVATAR_DIMENSIONS.WIDTH * 2,
 			-AVATAR_DIMENSIONS.HEIGHT,
 			AVATAR_DIMENSIONS.WIDTH * 2,
-			0,
+			0
 		]
 	}
 
-	get faces(): BoxFaces {
+	get faces() {
 		return this.#faces
 	}
 }

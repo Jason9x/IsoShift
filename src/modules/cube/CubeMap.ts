@@ -9,12 +9,11 @@ import ICubeMap from '@/interfaces/modules/ICubeMap'
 import ITileMap from '@/interfaces/modules/ITileMap'
 
 import Point3D from '@/utils/coordinates/Point3D'
-
 import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
-import {
-	findClosestValidTilePosition,
-	isValidTilePosition,
-} from '@/utils/helpers/tilePositionHelpers'
+
+import { findClosestValidTilePosition, isValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
+
+import calculateCubeOffsets from '@/utils/calculations/calculateCubeOffsets'
 
 import { CUBE_SETTINGS } from '@/constants/Cube.constants'
 import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
@@ -47,7 +46,6 @@ export default class CubeMap implements ICubeMap {
 			if (!currentTile) return
 
 			let tallestCubeAtTile = this.findTallestCubeAt(currentTile.position)
-
 			const isCubeNarrower =
 				tallestCubeAtTile && tallestCubeAtTile.size < validSize
 
@@ -55,14 +53,15 @@ export default class CubeMap implements ICubeMap {
 				const data = this.#getClosestValidTileData(validPosition)
 
 				if (!data) return
-				;({ tilePosition, currentTile, tallestCubeAtTile } = data)
+
+				({ tilePosition, currentTile, tallestCubeAtTile } = data)
 			}
 
-			const cubeOffsets = new Point(size, size)
+			const cubeOffsets = calculateCubeOffsets(size)
 			const finalPosition = this.#getFinalCubePosition(
 				tilePosition,
 				cubeOffsets,
-				tallestCubeAtTile,
+				tallestCubeAtTile
 			)
 
 			if (!currentTile) return
@@ -98,11 +97,11 @@ export default class CubeMap implements ICubeMap {
 
 	#getClosestValidTileData(position: Point3D):
 		| {
-				validPosition: Point3D
-				tilePosition: Point3D
-				currentTile: Tile | undefined
-				tallestCubeAtTile: Cube | null
-		  }
+		validPosition: Point3D
+		tilePosition: Point3D
+		currentTile: Tile | undefined
+		tallestCubeAtTile: Cube | null
+	}
 		| undefined {
 		const validPosition = findClosestValidTilePosition(position)
 
@@ -117,10 +116,10 @@ export default class CubeMap implements ICubeMap {
 
 	#getFinalCubePosition(
 		tilePosition: Point3D,
-		cubeOffsets: Point,
-		tallestCubeAtTile: Cube | null,
+		offsets: Point,
+		tallestCubeAtTile: Cube | null
 	) {
-		const finalPosition = tilePosition.subtract(cubeOffsets)
+		const finalPosition = tilePosition.subtract(offsets)
 
 		finalPosition.z = tallestCubeAtTile
 			? tallestCubeAtTile.position.z + tallestCubeAtTile.size
@@ -129,12 +128,12 @@ export default class CubeMap implements ICubeMap {
 		return finalPosition
 	}
 
-	#addCube(cube: Cube): void {
+	#addCube(cube: Cube) {
 		this.#cubes.push(cube)
 		this.#container.addChild(cube.container)
 	}
 
-	#sortCubesByPosition = (cubeA: Cube, cubeB: Cube): number => {
+	#sortCubesByPosition = (cubeA: Cube, cubeB: Cube) => {
 		const { currentTile: currentTileA, position: positionA } = cubeA
 		const { currentTile: currentTileB, position: positionB } = cubeB
 

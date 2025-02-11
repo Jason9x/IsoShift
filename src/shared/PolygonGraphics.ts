@@ -17,7 +17,7 @@ export default class PolygonGraphics extends Graphics {
 			bottom?: boolean
 			left?: boolean
 			right?: boolean
-		} = {},
+		} = {}
 	) {
 		super()
 
@@ -40,7 +40,7 @@ export default class PolygonGraphics extends Graphics {
 			bottom?: boolean
 			left?: boolean
 			right?: boolean
-		} = {},
+		} = {}
 	) {
 		this.draw(color)
 
@@ -49,7 +49,7 @@ export default class PolygonGraphics extends Graphics {
 		this.#drawLines(lineColor, lineWidth, sides)
 	}
 
-	draw(color: number): void {
+	draw(color: number) {
 		this.clear()
 
 		this.beginFill(color)
@@ -65,8 +65,8 @@ export default class PolygonGraphics extends Graphics {
 			bottom?: boolean
 			left?: boolean
 			right?: boolean
-		},
-	): void {
+		}
+	) {
 		const { top, bottom, left, right } = sides
 
 		if (bottom) {

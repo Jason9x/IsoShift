@@ -3,6 +3,7 @@ import { injectable } from 'inversify'
 import { Container } from 'pixi.js'
 
 import Wall from '@/modules/wall/Wall'
+
 import IWallMap from '@/interfaces/modules/IWallMap'
 
 @injectable()
@@ -20,11 +21,11 @@ export default class WallMap implements IWallMap {
 		this.#container.addChild(wall.container)
 	}
 
-	get walls(): Wall[] {
+	get walls() {
 		return this.#walls
 	}
 
-	get container(): Container {
+	get container() {
 		return this.#container
 	}
 }

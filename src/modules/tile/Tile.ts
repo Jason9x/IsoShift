@@ -10,10 +10,7 @@ import TileContainer from './TileContainer'
 import { FaceKey } from '@/types/BoxFaces.types'
 
 import createColorInput from '@/utils/helpers/colorInputHelper'
-import {
-	cartesianToIsometric,
-	isometricToCartesian,
-} from '@/utils/coordinates/coordinateTransformations'
+import { cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
 
 import ITileMap from '@/interfaces/modules/ITileMap'
 import IAvatar from '@/interfaces/modules/IAvatar'
@@ -26,17 +23,17 @@ export default class Tile {
 		this.#position = position
 		this.#container = new TileContainer(
 			cartesianToIsometric(this.#position),
-			this.#getBorders(),
+			this.#getBorders()
 		)
 
 		this.#setupEventListeners()
 	}
 
-	isPositionWithinBounds(position: Point): boolean {
+	isPositionWithinBounds(position: Point) {
 		const { x, y, z } = cartesianToIsometric(this.#position)
 
 		const transformedPoints = TILE_SURFACE_POINTS.map(
-			(point, index) => point + (index % 2 === 0 ? x : y - z),
+			(point, index) => point + (index % 2 === 0 ? x : y - z)
 		)
 		const polygon = new Polygon(transformedPoints)
 
@@ -45,7 +42,7 @@ export default class Tile {
 
 	#setupEventListeners() {
 		this.#container.faces.forEach((face, key) =>
-			face?.on('rightclick', this.#handleFaceClick.bind(this, key)),
+			face?.on('rightclick', this.#handleFaceClick.bind(this, key))
 		)
 
 		this.#container
@@ -56,10 +53,10 @@ export default class Tile {
 
 	#getBorders = (): [boolean, boolean] => [
 		this.#isTileEmpty(new Point(0, 1)),
-		this.#isTileEmpty(new Point(1, 0)),
+		this.#isTileEmpty(new Point(1, 0))
 	]
 
-	#isTileEmpty(delta: Point): boolean {
+	#isTileEmpty(delta: Point) {
 		const { x, y, z } = isometricToCartesian(this.#position)
 
 		const grid = container.get<number[][]>('Grid')
@@ -71,13 +68,13 @@ export default class Tile {
 		return !tileZ || tileZ !== z
 	}
 
-	#handleFaceClick = (key: FaceKey): void =>
+	#handleFaceClick = (key: FaceKey) =>
 		createColorInput(hexColor =>
 			container
 				.get<ITileMap>('ITileMap')
 				.tiles.forEach(tile =>
-					tile.container?.faces.get(key)?.initialize(hexColor),
-				),
+				tile.container?.faces.get(key)?.initialize(hexColor)
+			)
 		)
 
 	#handlePointerOver() {
@@ -88,7 +85,6 @@ export default class Tile {
 		if (event.button !== 0) return
 
 		const avatar = container.get<IAvatar>('IAvatar')
-
 		avatar.goalPosition = this.#position.clone()
 
 		await avatar.calculatePath()

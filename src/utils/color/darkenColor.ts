@@ -1,4 +1,4 @@
-const darkenColor = (color: number, percent: number): number => {
+const darkenColor = (color: number, percent: number) => {
 	const factor = 1 - percent / 100
 
 	const r = ((color >> 16) & 0xff) * factor

@@ -4,7 +4,6 @@ export default class Node {
 	readonly #position: Point3D
 
 	#gCost: number = 0
-	#hCost: number = 0
 	#fCost: number = 0
 
 	#parent: Node | null = null
@@ -14,7 +13,7 @@ export default class Node {
 		this.#position = position
 	}
 
-	get position(): Point3D {
+	get position() {
 		return this.#position
 	}
 
@@ -26,13 +25,6 @@ export default class Node {
 		this.#gCost = value
 	}
 
-	get hCost(): number {
-		return this.#hCost
-	}
-
-	set hCost(value: number) {
-		this.#hCost = value
-	}
 
 	get fCost(): number {
 		return this.#fCost

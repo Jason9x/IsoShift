@@ -11,16 +11,6 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "src/**/*.ts": [
-      "npx prettier --config .prettierrc --write"
-    ]
-  },
   "dependencies": {
     "inversify": "^6.0.2",
     "pixi.js": "^7.1.4",
@@ -29,13 +19,10 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.23.0",
-    "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.8.1",
     "eslint": "^9.20.0",
     "heap-js": "^2.3.0",
     "html-webpack-plugin": "^5.5.3",
-    "husky": "^8.0.0",
-    "prettier": "^3.3.3",
     "style-loader": "^3.3.3",
     "ts-loader": "^9.4.4",
     "typescript": "^5.7.3",

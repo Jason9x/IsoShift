@@ -6,7 +6,7 @@ import ITileMap from '@/interfaces/modules/ITileMap'
 
 import Point3D from '@/utils/coordinates/Point3D'
 
-export const isValidTilePosition = (position: Point3D): boolean => {
+export const isValidTilePosition = (position: Point3D) => {
 	const { x, y, z } = position
 
 	const position2D = new Point(x, y)
@@ -22,20 +22,20 @@ export const isValidTilePosition = (position: Point3D): boolean => {
 
 const isTilePositionInBounds = (
 	position: Point3D,
-	grid: number[][],
-): boolean => {
+	grid: number[][]
+) => {
 	const { x, y } = position
 
 	const maxGridValues = new Point(
 		grid.length - 1,
-		Math.max(...grid.map(row => row.length)) - 1,
+		Math.max(...grid.map(row => row.length)) - 1
 	)
 
 	return x >= 0 && y >= 0 && x <= maxGridValues.x && y <= maxGridValues.y
 }
 
 export const findClosestValidTilePosition = (
-	position: Point3D,
+	position: Point3D
 ) => {
 	const grid = container.get<number[][]>('Grid')
 
@@ -46,7 +46,7 @@ export const findClosestValidTilePosition = (
 				distance: number
 			},
 			row: number[],
-			x: number,
+			x: number
 		) =>
 			row.reduce(
 				(
@@ -55,7 +55,7 @@ export const findClosestValidTilePosition = (
 						distance: number
 					},
 					z: number,
-					y: number,
+					y: number
 				) => {
 					if (z < 0) return innerClosest
 
@@ -70,16 +70,17 @@ export const findClosestValidTilePosition = (
 							? 0
 							: distance
 
-					if (priority < innerClosest.distance)
+					if (priority < innerClosest.distance) {
 						return {
 							position: potentialPosition,
-							distance: priority,
+							distance: priority
 						}
+					}
 
 					return innerClosest
 				},
-				closest,
+				closest
 			),
-		{ position: null, distance: Number.POSITIVE_INFINITY },
+		{ position: null, distance: Number.POSITIVE_INFINITY }
 	).position
 }

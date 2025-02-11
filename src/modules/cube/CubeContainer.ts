@@ -2,9 +2,9 @@ import { Container } from 'pixi.js'
 
 import PolygonGraphics from '@/shared/PolygonGraphics'
 
-import { BoxFaces } from '@/types/BoxFaces.types'
-
 import Point3D from '@/utils/coordinates/Point3D'
+
+import { BoxFaces } from '@/types/BoxFaces.types'
 
 import { CUBE_FACE_COLORS } from '@/constants/Cube.constants'
 
@@ -22,23 +22,23 @@ export default class CubeContainer extends Container {
 				'top',
 				new PolygonGraphics(
 					CUBE_FACE_COLORS.TOP_FACE,
-					this.#topFacePoints,
-				),
+					this.#topFacePoints
+				)
 			],
 			[
 				'left',
 				new PolygonGraphics(
 					CUBE_FACE_COLORS.LEFT_FACE,
-					this.#leftFacePoints,
-				),
+					this.#leftFacePoints
+				)
 			],
 			[
 				'right',
 				new PolygonGraphics(
 					CUBE_FACE_COLORS.RIGHT_FACE,
-					this.#rightFacePoints,
-				),
-			],
+					this.#rightFacePoints
+				)
+			]
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))
@@ -46,7 +46,7 @@ export default class CubeContainer extends Container {
 		this.eventMode = 'dynamic'
 	}
 
-	get #topFacePoints(): number[] {
+	get #topFacePoints() {
 		return [
 			0,
 			0,
@@ -55,11 +55,11 @@ export default class CubeContainer extends Container {
 			this.#size * 2,
 			0,
 			this.#size,
-			this.#size / 2,
+			this.#size / 2
 		]
 	}
 
-	get #leftFacePoints(): number[] {
+	get #leftFacePoints() {
 		return [
 			0,
 			0,
@@ -68,11 +68,11 @@ export default class CubeContainer extends Container {
 			this.#size,
 			this.#size * 1.5,
 			this.#size,
-			this.#size / 2,
+			this.#size / 2
 		]
 	}
 
-	get #rightFacePoints(): number[] {
+	get #rightFacePoints() {
 		return [
 			this.#size * 2,
 			0,
@@ -81,11 +81,11 @@ export default class CubeContainer extends Container {
 			this.#size,
 			this.#size * 1.5,
 			this.#size,
-			this.#size / 2,
+			this.#size / 2
 		]
 	}
 
-	get faces(): BoxFaces {
+	get faces() {
 		return this.#faces
 	}
 }

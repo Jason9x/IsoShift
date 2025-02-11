@@ -1,19 +1,23 @@
 import { Point } from 'pixi.js'
 
+import { inject, injectable } from 'inversify'
+
 import Heap from 'heap-js'
 
-import Node from '@/pathfinding/Node'
+import Node from './Node'
+
+import IPathfinder from '@/interfaces/modules/IPathfinder'
+
+import ITileMap from '@/interfaces/modules/ITileMap'
+import ICubeMap from '@/interfaces/modules/ICubeMap'
 
 import Point3D from '@/utils/coordinates/Point3D'
+import { cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
+
 import { isValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
-import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
 
 import { AVATAR_DIMENSIONS } from '@/constants/Avatar.constants'
 import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
-import IPathfinder from '@/interfaces/modules/IPathfinder'
-import { inject, injectable } from 'inversify'
-import ITileMap from '@/interfaces/modules/ITileMap'
-import ICubeMap from '@/interfaces/modules/ICubeMap'
 
 @injectable()
 export default class Pathfinder implements IPathfinder {
@@ -25,7 +29,7 @@ export default class Pathfinder implements IPathfinder {
 
 	constructor(
 		@inject('ITileMap') tileMap: ITileMap,
-		@inject('ICubeMap') cubeMap: ICubeMap,
+		@inject('ICubeMap') cubeMap: ICubeMap
 	) {
 		this.#tileMap = tileMap
 		this.#cubeMap = cubeMap
@@ -34,13 +38,13 @@ export default class Pathfinder implements IPathfinder {
 	findPath(
 		startPosition: Point3D,
 		goalPosition: Point3D,
-		isRecalculating: boolean,
-	): Point3D[] | null {
+		isRecalculating: boolean
+	) {
 		if (!this.#validateInput(startPosition, goalPosition)) return null
 
 		const [openList, closedList] = [
 			this.#initializeOpenList(),
-			new Set<Node>(),
+			new Set<Node>()
 		]
 
 		let startNode = this.#createStartNode(startPosition, goalPosition)
@@ -68,27 +72,27 @@ export default class Pathfinder implements IPathfinder {
 					neighborNode,
 					currentNode,
 					openList,
-					goalPosition,
-				),
+					goalPosition
+				)
 			)
 		}
 
 		return isRecalculating ? this.#reconstructPath(closestNode) : null
 	}
 
-	#validateInput = (startPosition: Point3D, goalPosition: Point3D): boolean =>
+	#validateInput = (startPosition: Point3D, goalPosition: Point3D) =>
 		isValidTilePosition(startPosition) &&
 		isValidTilePosition(goalPosition) &&
 		!startPosition.equals(goalPosition)
 
-	#initializeOpenList(): Heap<Node> {
+	#initializeOpenList() {
 		const comparator = (nodeA: Node, nodeB: Node) =>
 			nodeA.fCost - nodeB.fCost
 
 		return new Heap<Node>(comparator)
 	}
 
-	#createStartNode(startPosition: Point3D, goalPosition: Point3D): Node {
+	#createStartNode(startPosition: Point3D, goalPosition: Point3D) {
 		const startNode = new Node(startPosition)
 
 		startNode.fCost = startPosition.distanceTo(goalPosition)
@@ -96,21 +100,20 @@ export default class Pathfinder implements IPathfinder {
 		return startNode
 	}
 
-	#isInClosedList = (node: Node, closedList: Set<Node>): boolean =>
+	#isInClosedList = (node: Node, closedList: Set<Node>) =>
 		[...closedList].some(nodeValue =>
-			nodeValue.position.equals(node.position),
+			nodeValue.position.equals(node.position)
 		)
 
-	#updateNodeHeight(node: Node): void {
-		const nodePosition = cartesianToIsometric(node.position)
-		const tallestCubeAtNode = this.#cubeMap.findTallestCubeAt(nodePosition)
+	#updateNodeHeight(node: Node) {
+		const tallestCubeAtNode = this.#cubeMap.findTallestCubeAt(node.position)
 
 		node.height = tallestCubeAtNode
 			? tallestCubeAtNode.position.z + tallestCubeAtNode.size
-			: nodePosition.z + TILE_DIMENSIONS.thickness
+			: node.position.z + TILE_DIMENSIONS.thickness
 	}
 
-	#reconstructPath(goalNode: Node): Point3D[] {
+	#reconstructPath(goalNode: Node) {
 		const path: Point3D[] = []
 
 		let currentNode: Node | null = goalNode
@@ -124,12 +127,12 @@ export default class Pathfinder implements IPathfinder {
 		return path.reverse()
 	}
 
-	#getNeighborNodes = (node: Node): Node[] =>
+	#getNeighborNodes = (node: Node) =>
 		this.#getNeighborPositions(node.position).map(
-			neighborPosition => new Node(neighborPosition),
+			neighborPosition => new Node(neighborPosition)
 		)
 
-	#getNeighborPositions(position: Point3D): Point3D[] {
+	#getNeighborPositions(position: Point3D) {
 		const neighborPositions: Point3D[] = []
 		const neighborOffsets = [
 			new Point(-1, 0), // Left
@@ -139,27 +142,27 @@ export default class Pathfinder implements IPathfinder {
 			new Point(-1, -1), // Top-left
 			new Point(1, 1), // Bottom-right
 			new Point(-1, 1), // Bottom-left
-			new Point(1, -1), // Top-right
+			new Point(1, -1) // Top-right
 		]
 
 		neighborOffsets.forEach(offset => {
 			const neighborGridPosition = new Point(
 				position.x + offset.x,
-				position.y + offset.y,
+				position.y + offset.y
 			)
 
 			const gridZ = this.#tileMap.getGridValue(neighborGridPosition)
 			const neighborPosition = new Point3D(
 				neighborGridPosition.x,
 				neighborGridPosition.y,
-				gridZ,
+				gridZ
 			)
 
 			neighborPositions.push(neighborPosition)
 		})
 
 		return neighborPositions.filter(position =>
-			isValidTilePosition(position),
+			isValidTilePosition(position)
 		)
 	}
 
@@ -167,15 +170,12 @@ export default class Pathfinder implements IPathfinder {
 		neighborNode: Node,
 		currentNode: Node,
 		openList: Heap<Node>,
-		goalPosition: Point3D,
-	): void {
+		goalPosition: Point3D
+	) {
 		this.#updateNodeHeight(neighborNode)
 
-		if (
-			this.#isObstacle(neighborNode, currentNode) ||
-			this.#isPathObstructed(neighborNode, currentNode)
-		)
-			return
+		if (this.#isObstacle(neighborNode, currentNode) ||
+			this.#isPathObstructed(neighborNode, currentNode)) return
 
 		const gCost = this.#calculateGCost(currentNode, neighborNode)
 		const hCost = neighborNode.position.distanceTo(goalPosition)
@@ -185,16 +185,15 @@ export default class Pathfinder implements IPathfinder {
 
 		if (existingNode && fCost >= existingNode.fCost) return
 
-		this.#updateNeighborNode(neighborNode, gCost, hCost, fCost, currentNode)
+		this.#updateNeighborNode(neighborNode, gCost, fCost, currentNode)
 
 		if (existingNode) return
 
 		openList.push(neighborNode)
 	}
 
-	#isObstacle(node: Node, currentNode: Node): boolean {
-		const nodePosition = cartesianToIsometric(node.position)
-		const tallestCubeAtNode = this.#cubeMap.findTallestCubeAt(nodePosition)
+	#isObstacle(neighborNode: Node, currentNode: Node) {
+		const tallestCubeAtNode = this.#cubeMap.findTallestCubeAt(neighborNode.position)
 
 		const isNarrowerThanAvatar = tallestCubeAtNode
 			? tallestCubeAtNode.size < AVATAR_DIMENSIONS.WIDTH
@@ -202,84 +201,79 @@ export default class Pathfinder implements IPathfinder {
 
 		const maximumHeightThreshold =
 			currentNode.height + AVATAR_DIMENSIONS.HEIGHT / 1.5
-		const isNodeHigher = node.height > maximumHeightThreshold
+		const isNodeHigher = neighborNode.height > maximumHeightThreshold
 
 		return isNarrowerThanAvatar || isNodeHigher
 	}
 
-	#isPathObstructed(node: Node, currentNode: Node): boolean {
+	#isPathObstructed(node: Node, currentNode: Node) {
 		if (!this.#isDiagonalMove(node, currentNode)) return false
 
 		const potentialObstaclePositions = this.#getPotentialObstaclePositions(
 			node,
-			currentNode,
+			currentNode
 		)
 
 		return potentialObstaclePositions.every(position => {
 			if (!position) return
 
-			console.log(position)
-
-			const tile = this.#tileMap.findTileByExactPosition(cartesianToIsometric(position))
-			const cube = this.#cubeMap.findTallestCubeAt(cartesianToIsometric(position))
-
-			console.log(tile, cube)
+			const tile = this.#tileMap.findTileByExactPosition(
+				isometricToCartesian(position)
+			)
+			const cube = this.#cubeMap.findTallestCubeAt(
+				isometricToCartesian(position)
+			)
 
 			return !tile || cube
 		})
 	}
 
-	#isDiagonalMove = (node: Node, currentNode: Node): boolean =>
+	#isDiagonalMove = (node: Node, currentNode: Node) =>
 		Math.abs(node.position.x - currentNode.position.x) === 1 &&
 		Math.abs(node.position.y - currentNode.position.y) === 1
 
-	#getPotentialObstaclePositions(
-		targetNode: Node,
-		currentNode: Node,
-	): (Point3D | undefined)[] {
+	#getPotentialObstaclePositions(targetNode: Node, currentNode: Node) {
 		const movementDirection = this.#calculateMovementDirection(
 			targetNode,
-			currentNode,
+			currentNode
 		)
 
 		return [
 			this.#calculateObstaclePosition3D(
 				targetNode,
 				movementDirection,
-				'left',
+				'left'
 			),
 			this.#calculateObstaclePosition3D(
 				targetNode,
 				movementDirection,
-				'right',
-			),
+				'right'
+			)
 		]
 	}
 
-	#calculateMovementDirection = (
-		targetNode: Node,
-		currentNode: Node,
-	): Point =>
+	#calculateMovementDirection = (targetNode: Node, currentNode: Node) =>
 		new Point(
 			targetNode.position.x - currentNode.position.x,
-			targetNode.position.y - currentNode.position.y,
+			targetNode.position.y - currentNode.position.y
 		)
 
 	#calculateObstaclePosition3D(
 		targetNode: Node,
 		movementDirection: Point,
-		side: 'left' | 'right',
-	): Point3D | undefined {
+		side: 'left' | 'right'
+	) {
 		const obstaclePosition2D = this.#calculateObstaclePosition2D(
 			targetNode,
 			movementDirection,
-			side,
+			side
 		)
+
 		const obstacleZ = this.#tileMap.getGridValue(obstaclePosition2D)
 		const obstaclePosition3D = new Point3D(
 			obstaclePosition2D.x,
 			obstaclePosition2D.y,
-			obstacleZ,
+			obstacleZ
 		)
 
 		return cartesianToIsometric(obstaclePosition3D)
@@ -288,36 +282,33 @@ export default class Pathfinder implements IPathfinder {
 	#calculateObstaclePosition2D(
 		targetNode: Node,
 		movementDirection: Point,
-		side: 'left' | 'right',
-	): Point {
+		side: 'left' | 'right'
+	) {
 		const calculations = {
 			left: new Point(
 				targetNode.position.x,
-				targetNode.position.y - movementDirection.y,
+				targetNode.position.y - movementDirection.y
 			),
 			right: new Point(
 				targetNode.position.x - movementDirection.x,
-				targetNode.position.y,
-			),
+				targetNode.position.y
+			)
 		}
 
 		return calculations[side]
 	}
 
-	#findExistingNode = (
-		neighborNode: Node,
-		openList: Heap<Node>,
-	): Node | undefined =>
+	#findExistingNode = (neighborNode: Node, openList: Heap<Node>) =>
 		openList
 			.toArray()
 			.find(node => node.position.equals(neighborNode.position))
 
-	#calculateGCost(currentNode: Node, neighborNode: Node): number {
+	#calculateGCost(currentNode: Node, neighborNode: Node) {
 		const deltaX = Math.abs(
-			neighborNode.position.x - currentNode.position.x,
+			neighborNode.position.x - currentNode.position.x
 		)
 		const deltaY = Math.abs(
-			neighborNode.position.y - currentNode.position.y,
+			neighborNode.position.y - currentNode.position.y
 		)
 
 		const costOfMovement =
@@ -331,12 +322,10 @@ export default class Pathfinder implements IPathfinder {
 	#updateNeighborNode = (
 		neighborNode: Node,
 		gCost: number,
-		hCost: number,
 		fCost: number,
-		currentNode: Node,
-	): void => {
+		currentNode: Node
+	) => {
 		neighborNode.gCost = gCost
-		neighborNode.hCost = hCost
 		neighborNode.fCost = fCost
 		neighborNode.parent = currentNode
 	}

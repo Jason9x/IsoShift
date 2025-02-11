@@ -2,12 +2,12 @@ import { Container, Graphics } from 'pixi.js'
 
 import PolygonGraphics from '@/shared/PolygonGraphics'
 
+import Point3D from '@/utils/coordinates/Point3D'
+import { isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
+
 import { BoxFaces } from '@/types/BoxFaces.types'
 
-import Point3D from '@/utils/coordinates/Point3D'
-
-import { TILE_STYLES, TILE_DIMENSIONS } from '@/constants/Tile.constants'
-import { isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
+import { TILE_DIMENSIONS, TILE_STYLES } from '@/constants/Tile.constants'
 
 export default class TileContainer extends Container {
 	readonly #faces: BoxFaces
@@ -37,34 +37,34 @@ export default class TileContainer extends Container {
 						top: !isAtFirstRow,
 						bottom: false,
 						left: !isAtFirstColumn && hasLeftBorder,
-						right: hasRightBorder,
-					},
-				),
+						right: hasRightBorder
+					}
+				)
 			],
 			[
 				'left',
 				hasLeftBorder
 					? new PolygonGraphics(
-							TILE_STYLES.leftBorder.fillColor,
-							this.#leftBorderPoints,
-							TILE_STYLES.leftBorder.borderColor,
-							TILE_STYLES.leftBorder.borderWidth,
-							{ top: true, bottom: true },
-						)
-					: null,
+						TILE_STYLES.leftBorder.fillColor,
+						this.#leftBorderPoints,
+						TILE_STYLES.leftBorder.borderColor,
+						TILE_STYLES.leftBorder.borderWidth,
+						{ top: true, bottom: true }
+					)
+					: null
 			],
 			[
 				'right',
 				hasRightBorder
 					? new PolygonGraphics(
-							TILE_STYLES.rightBorder.fillColor,
-							this.#rightBorderPoints,
-							TILE_STYLES.rightBorder.borderColor,
-							TILE_STYLES.rightBorder.borderWidth,
-							{ top: true, bottom: true },
-						)
-					: null,
-			],
+						TILE_STYLES.rightBorder.fillColor,
+						this.#rightBorderPoints,
+						TILE_STYLES.rightBorder.borderColor,
+						TILE_STYLES.rightBorder.borderWidth,
+						{ top: true, bottom: true }
+					)
+					: null
+			]
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))
@@ -92,7 +92,7 @@ export default class TileContainer extends Container {
 		this.#hoverEffect = undefined
 	}
 
-	get #surfacePoints(): number[] {
+	get #surfacePoints() {
 		return [
 			TILE_DIMENSIONS.width / 2,
 			0,
@@ -101,37 +101,37 @@ export default class TileContainer extends Container {
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height,
 			0,
-			TILE_DIMENSIONS.height / 2,
+			TILE_DIMENSIONS.height / 2
 		]
 	}
 
-	get #leftBorderPoints(): number[] {
+	get #leftBorderPoints() {
 		return [
 			0,
-			TILE_DIMENSIONS.height / 2,
-			TILE_DIMENSIONS.width / 2,
-			TILE_DIMENSIONS.height,
-			TILE_DIMENSIONS.width / 2,
-			TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
-			0,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
-		]
-	}
-
-	get #rightBorderPoints(): number[] {
-		return [
-			TILE_DIMENSIONS.width,
 			TILE_DIMENSIONS.height / 2,
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height,
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.width,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
+			0,
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness
 		]
 	}
 
-	get faces(): BoxFaces {
+	get #rightBorderPoints() {
+		return [
+			TILE_DIMENSIONS.width,
+			TILE_DIMENSIONS.height / 2,
+			TILE_DIMENSIONS.width / 2,
+			TILE_DIMENSIONS.height,
+			TILE_DIMENSIONS.width / 2,
+			TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.width,
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness
+		]
+	}
+
+	get faces() {
 		return this.#faces
 	}
 }

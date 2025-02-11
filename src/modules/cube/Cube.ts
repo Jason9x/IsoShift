@@ -1,7 +1,15 @@
-import { FederatedPointerEvent, Point } from 'pixi.js'
+import { FederatedPointerEvent } from 'pixi.js'
+
+import container from '@/inversify.config'
+
+
+import ITileMap from '@/interfaces/modules/ITileMap'
+import IAvatar from '@/interfaces/modules/IAvatar'
+import ICubeMap from '@/interfaces/modules/ICubeMap'
+
+import ICamera from '@/interfaces/game/ICamera'
 
 import Tile from '@/modules/tile/Tile'
-
 import CubeContainer from '@/modules/cube/CubeContainer'
 
 import PolygonGraphics from '@/shared/PolygonGraphics'
@@ -10,13 +18,8 @@ import Point3D from '@/utils/coordinates/Point3D'
 
 import createColorInput from '@/utils/helpers/colorInputHelper'
 
-import ITileMap from '@/interfaces/modules/ITileMap'
-
-import container from '@/inversify.config'
-import IAvatar from '@/interfaces/modules/IAvatar'
-import ICamera from '@/interfaces/game/ICamera'
-import ICubeMap from '@/interfaces/modules/ICubeMap'
 import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
+import calculateCubeOffsets from '@/utils/calculations/calculateCubeOffsets'
 
 export default class Cube {
 	readonly #position: Point3D
@@ -37,9 +40,9 @@ export default class Cube {
 		this.#setupEventListeners()
 	}
 
-	#setupEventListeners(): void {
+	#setupEventListeners() {
 		this.#container.faces.forEach(face =>
-			face?.on('rightdown', this.#handleFaceClick.bind(this, face)),
+			face?.on('rightdown', this.#handleFaceClick.bind(this, face))
 		)
 
 		this.#container
@@ -51,10 +54,10 @@ export default class Cube {
 			.on('pointerupoutside', this.#handleDragEnd.bind(this))
 	}
 
-	#handleFaceClick = (face: PolygonGraphics): void =>
+	#handleFaceClick = (face: PolygonGraphics) =>
 		createColorInput(hexColor => face.initialize(hexColor))
 
-	#handlePointerDown(event: FederatedPointerEvent): void {
+	#handlePointerDown(event: FederatedPointerEvent) {
 		if (event.button !== 0) return
 
 		this.#container.alpha = 0.5
@@ -64,10 +67,10 @@ export default class Cube {
 		camera.enabled = false
 	}
 
-	#handlePointerOver = (event: FederatedPointerEvent): boolean | undefined =>
+	#handlePointerOver = (event: FederatedPointerEvent) =>
 		this.#currentTile?.container?.emit('pointerover', event)
 
-	#handlePointerOut = (event: FederatedPointerEvent): boolean | undefined =>
+	#handlePointerOut = (event: FederatedPointerEvent) =>
 		this.#currentTile?.container?.emit('pointerout', event)
 
 	async #handleDragMove(event: FederatedPointerEvent) {
@@ -100,7 +103,7 @@ export default class Cube {
 		this.currentTile?.container.emit('pointerover', event)
 	}
 
-	#handleDragEnd(): void {
+	#handleDragEnd() {
 		this.#container.alpha = 1
 		this.#isDragging = false
 
@@ -108,9 +111,8 @@ export default class Cube {
 		camera.enabled = true
 	}
 
-	#placeOnTile(tile: Tile): void {
+	#placeOnTile(tile: Tile) {
 		const cubeMap = container.get<ICubeMap>('ICubeMap')
-
 		const tallestCubeAtTile = cubeMap.findTallestCubeAt(tile.position)
 
 		if (
@@ -119,12 +121,10 @@ export default class Cube {
 		)
 			return
 
-		const offsets = new Point(this.#size, this.#size)
+		const cubeOffsets = calculateCubeOffsets(this.#size)
 		const newPosition = cartesianToIsometric(tile.position).subtract(
-			offsets,
+			cubeOffsets
 		)
-
-		console.log(tile.position)
 
 		newPosition.z = tallestCubeAtTile
 			? tallestCubeAtTile.position.z + tallestCubeAtTile.size
@@ -133,33 +133,32 @@ export default class Cube {
 		this.#updatePosition(newPosition)
 
 		const avatar = container.get<IAvatar>('IAvatar')
-
 		avatar.adjustPositionOnCubeDrag(this)
 
 		this.#currentTile = tile
 	}
 
-	#isLargerThan = (cube: Cube): boolean => this.#size > cube.size
+	#isLargerThan = (cube: Cube) => this.#size > cube.size
 
-	#updatePosition(position: Point3D): void {
+	#updatePosition(position: Point3D) {
 		this.#position.copyFrom(position)
 
 		this.#container.position.set(position.x, position.y - position.z)
 	}
 
-	get position(): Point3D {
+	get position() {
 		return this.#position
 	}
 
-	get size(): number {
+	get size() {
 		return this.#size
 	}
 
-	get container(): CubeContainer {
+	get container() {
 		return this.#container
 	}
 
-	get currentTile(): Tile | undefined {
+	get currentTile() {
 		return this.#currentTile
 	}
 }

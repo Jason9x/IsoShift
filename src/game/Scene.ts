@@ -1,17 +1,13 @@
-import {
-	Application,
-	BaseTexture,
-	Point,
-	SCALE_MODES,
-	settings,
-	Ticker,
-} from 'pixi.js'
-import { injectable, inject } from 'inversify'
+import { Application, BaseTexture, Point, SCALE_MODES, settings, Ticker } from 'pixi.js'
+
+import { inject, injectable } from 'inversify'
+
+import ICamera from '@/interfaces/game/ICamera'
+import IScene from '@/interfaces/game/IScene'
 
 import ITileMap from '@/interfaces/modules/ITileMap'
-import IScene from '@/interfaces/game/IScene'
 import IWallMap from '@/interfaces/modules/IWallMap'
-import ICamera from '@/interfaces/game/ICamera'
+
 import ICubeMap from '@/interfaces/modules/ICubeMap'
 import IAvatar from '@/interfaces/modules/IAvatar'
 
@@ -28,7 +24,7 @@ export default class Scene implements IScene {
 		@inject('ITileMap') tileMap: ITileMap,
 		@inject('IWallMap') wallMap: IWallMap,
 		@inject('ICubeMap') cubeMap: ICubeMap,
-		@inject('IAvatar') avatar: IAvatar,
+		@inject('IAvatar') avatar: IAvatar
 	) {
 		this.#camera = camera
 		this.#tileMap = tileMap
@@ -59,29 +55,26 @@ export default class Scene implements IScene {
 		this.#startTicker()
 	}
 
+	#initializeTileMap = () => this.#tileMap.generate()
+
 	#initializeMockedCubes = () => {
 		this.#cubeMap.populateSceneWithCubes()
 		this.#cubeMap.sortCubesByPosition()
 	}
 
-	#initializeTileMap = () => {
-		this.#tileMap.generate()
-	}
-
 	#initializeAvatar() {
 		this.#avatar.initialize()
+		this.#avatar.adjustRenderingOrder(this.#cubeMap.cubes)
+
+		this.#cubeMap.container.addChild(this.#avatar.container)
 	}
 
-	#addObjectsToStage = ({ stage }: Application) => {
-		if (!this.#avatar.container) return
-
+	#addObjectsToStage = ({ stage }: Application) =>
 		stage.addChild(
 			this.#wallMap.container,
 			this.#tileMap.container,
-			this.#avatar.container,
-			this.#cubeMap.container,
+			this.#cubeMap.container
 		)
-	}
 
 	#startTicker = () => Ticker.shared.add(this.#update.bind(this))
 

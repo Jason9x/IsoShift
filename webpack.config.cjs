@@ -1,6 +1,5 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     devtool: 'source-map',
@@ -47,11 +46,6 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Isometric room client'
-        }),
-        new CopyWebpackPlugin({
-            patterns: [
-                { from: 'assets', to: 'assets' }
-            ]
         })
     ]
 };

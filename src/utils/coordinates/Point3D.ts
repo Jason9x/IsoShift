@@ -19,54 +19,54 @@ export default class Point3D {
 
 	clone = () => new Point3D(this.#x, this.#y, this.#z)
 
-	equals = (point: Point3D): boolean =>
+	equals = (point: Point3D) =>
 		this.#x === point.x && this.#y === point.y && this.#z === point.z
 
-	add = (point: Point3D | Point): Point3D =>
+	add = (point: Point3D | Point) =>
 		new Point3D(
 			this.#x + point.x,
 			this.#y + point.y,
-			'z' in point ? this.#z + point.z : this.#z,
+			'z' in point ? this.#z + point.z : this.#z
 		)
 
-	subtract = (point: Point3D | Point): Point3D =>
+	subtract = (point: Point3D | Point) =>
 		new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			'z' in point ? this.#z - point.z : this.#z,
+			'z' in point ? this.#z - point.z : this.#z
 		)
 
-	distanceTo(point: Point3D): number {
+	distanceTo(point: Point3D) {
 		const delta = new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			this.#z - point.z,
+			this.#z - point.z
 		)
 
 		return Math.hypot(delta.x, delta.y, delta.z)
 	}
 
-	normalize = (): Point3D =>
+	normalize = () =>
 		this.magnitude === 0
 			? new Point3D(0, 0, 0)
 			: new Point3D(
-					this.#x / this.magnitude,
-					this.#y / this.magnitude,
-					this.#z / this.magnitude,
-				)
+				this.#x / this.magnitude,
+				this.#y / this.magnitude,
+				this.#z / this.magnitude
+			)
 
-	scale = (factor: number): Point3D =>
+	scale = (factor: number) =>
 		new Point3D(this.x * factor, this.y * factor, this.z * factor)
 
-	get x(): number {
+	get x() {
 		return this.#x
 	}
 
-	get y(): number {
+	get y() {
 		return this.#y
 	}
 
-	get z(): number {
+	get z() {
 		return this.#z
 	}
 
@@ -74,7 +74,7 @@ export default class Point3D {
 		this.#z = value
 	}
 
-	get magnitude(): number {
+	get magnitude() {
 		return Math.hypot(this.#x, this.#y, this.#z)
 	}
 }

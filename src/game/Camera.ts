@@ -18,11 +18,11 @@ export default class Camera implements ICamera {
 
 		view.addEventListener(
 			'pointerdown',
-			this.#onPointerDown.bind(this, stage),
+			this.#onPointerDown.bind(this, stage)
 		)
 		view.addEventListener(
 			'pointermove',
-			this.#onPointerMove.bind(this, stage),
+			this.#onPointerMove.bind(this, stage)
 		)
 		view.addEventListener('pointerup', this.#onPointerUp.bind(this))
 		view.addEventListener('wheel', this.#onMouseWheel.bind(this, stage))
@@ -39,7 +39,7 @@ export default class Camera implements ICamera {
 
 		const delta = new Point(
 			event.clientX - this.#initialDragPosition.x,
-			event.clientY - this.#initialDragPosition.y,
+			event.clientY - this.#initialDragPosition.y
 		)
 
 		stage.position.x += delta.x
@@ -57,7 +57,7 @@ export default class Camera implements ICamera {
 		this.#zoomFactor -= event.deltaY * 0.001
 		this.#zoomFactor = Math.max(
 			MIN_ZOOM,
-			Math.min(MAX_ZOOM, this.#zoomFactor),
+			Math.min(MAX_ZOOM, this.#zoomFactor)
 		)
 
 		stage.scale.set(this.#zoomFactor)

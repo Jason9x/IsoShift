@@ -1,7 +1,7 @@
 import ColorInput from '@/utils/color/ColorInput'
 import convertColorToHex from '@/utils/color/convertColorToHex'
 
-const createColorInput = (callback: (hexColor: number) => void): void => {
+const createColorInput = (callback: (hexColor: number) => void) => {
 	const colorInput = ColorInput.instance
 
 	colorInput.createInputElement()
