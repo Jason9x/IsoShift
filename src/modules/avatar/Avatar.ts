@@ -20,15 +20,21 @@ import {
 import { findClosestValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
 
 import createColorInput from '@/utils/helpers/colorInputHelper'
-import container from '@/inversify.config'
+
 import ITileMap from '@/interfaces/modules/ITileMap'
 import ICubeMap from '@/interfaces/modules/ICubeMap'
 
 import IPathfinder from '@/interfaces/modules/IPathfinder'
 import IAvatar from '@/interfaces/modules/IAvatar'
 import calculateInitialAvatarPosition from '@/utils/calculations/calculateInitialAvatarPosition'
+import { inject, injectable } from 'inversify'
 
+@injectable()
 export default class Avatar implements IAvatar {
+	readonly #tileMap: ITileMap
+	readonly #pathfinder: IPathfinder
+	readonly #cubeMap: ICubeMap
+
 	readonly #position: Point3D | undefined
 	readonly #container: AvatarContainer | undefined
 
@@ -38,7 +44,15 @@ export default class Avatar implements IAvatar {
 	#isMoving: boolean = false
 	#onMovementComplete: (() => void) | undefined
 
-	constructor() {
+	constructor(
+		@inject('ITileMap') tileMap: ITileMap,
+		@inject('IPathfinder') pathfinder: IPathfinder,
+		@inject('ICubeMap') cubeMap: ICubeMap,
+	) {
+		this.#tileMap = tileMap
+		this.#pathfinder = pathfinder
+		this.#cubeMap = cubeMap
+
 		this.#position = calculateInitialAvatarPosition()
 		this.#container = this.#position && new AvatarContainer(this.#position)
 	}
@@ -48,14 +62,11 @@ export default class Avatar implements IAvatar {
 
 		if (!tilePosition) return
 
-		const tileMap = container.get<ITileMap>('ITileMap')
-		const cubeMap = container.get<ICubeMap>('ICubeMap')
-
-		this.#currentTile = tileMap.findTileByExactPosition(tilePosition)
+		this.#currentTile = this.#tileMap.findTileByExactPosition(tilePosition)
 
 		let newPosition = this.#getNewPosition(tilePosition)
 
-		const tallestCubeAtTile = cubeMap.findTallestCubeAt(tilePosition)
+		const tallestCubeAtTile = this.#cubeMap.findTallestCubeAt(tilePosition)
 		const isCubeNarrowerThanAvatar =
 			tallestCubeAtTile &&
 			tallestCubeAtTile.size < AVATAR_DIMENSIONS.WIDTH
@@ -77,17 +88,13 @@ export default class Avatar implements IAvatar {
 	async calculatePath(isRecalculating: boolean = false) {
 		if (!this.#currentTile || !this.#goalPosition) return
 
-		console.log('aa boia d')
-
-		const startPosition = isometricToCartesian(this.#currentTile.position)
-
-		const pathfinder = container.get<IPathfinder>('IPathfinder')
-
-		const path = pathfinder.findPath(
-			startPosition,
+		const path = this.#pathfinder.findPath(
+			this.#currentTile.position,
 			this.#goalPosition,
 			isRecalculating,
 		)
+
+		console.log(path)
 
 		if (!path) return
 
@@ -95,31 +102,30 @@ export default class Avatar implements IAvatar {
 	}
 
 	async update(delta: number) {
-		if (!this.#isMoving) return
+		if (!this.#isMoving || !this.#targetPosition || !this.#position) return
 
-		if (this.#shouldReachDestination) {
+		const remainingDistance = this.#position.distanceTo(
+			this.#targetPosition,
+		)
+		const velocityMagnitude = this.#speed * delta
+
+		if (remainingDistance <= velocityMagnitude) {
 			this.#handleDestinationReached()
-
 			return
 		}
 
 		const velocity = this.#calculateVelocity(delta)
-
 		if (!velocity) return
 
-		const newPosition = this.#position?.add(velocity)
-		if (!newPosition) return
-
+		const newPosition = this.#position.add(velocity)
 		this.#updatePosition(newPosition)
 	}
 
 	adjustPositionOnCubeDrag = (cube: Cube): void => {
 		if (!this.#currentTile || cube.currentTile !== this.#currentTile) return
 
-		const cubeMap = container.get<ICubeMap>('ICubeMap')
-
 		const newPosition = this.#currentTile.position.add(AVATAR_OFFSETS)
-		const tallestCubeAtTile = cubeMap.findTallestCubeAt(
+		const tallestCubeAtTile = this.#cubeMap.findTallestCubeAt(
 			this.#currentTile.position,
 		)
 
@@ -131,10 +137,32 @@ export default class Avatar implements IAvatar {
 		this.#updatePosition(newPosition)
 	}
 
+	adjustRenderingOrder(cubes: Cube[]): void {
+		if (!this.#currentTile) return
+
+		const avatarTilePosition = isometricToCartesian(
+			this.#currentTile.position,
+		)
+
+		cubes.forEach(cube => {
+			if (!cube.currentTile) return
+			const cubeTilePosition = isometricToCartesian(
+				cube.currentTile.position,
+			)
+
+			const isCubeInFront =
+				cubeTilePosition.x >= avatarTilePosition.x &&
+				cubeTilePosition.y >= avatarTilePosition.y
+
+			cube.container.zIndex = isCubeInFront ? 1 : -1
+		})
+
+		this.#container?.sortChildren()
+	}
+
 	#getNewPosition(position: Point3D): Point3D {
-		const cubeMap = container.get<ICubeMap>('ICubeMap')
 		const newPosition = position.add(AVATAR_OFFSETS)
-		const tallestCube = cubeMap.findTallestCubeAt(position)
+		const tallestCube = this.#cubeMap.findTallestCubeAt(position)
 
 		if (tallestCube)
 			newPosition.z = tallestCube.position.z + tallestCube.size
@@ -147,9 +175,8 @@ export default class Avatar implements IAvatar {
 
 		if (!adjustedTilePosition) return
 
-		const tileMap = container.get<ITileMap>('ITileMap')
-
-		this.#currentTile = tileMap.findTileByExactPosition(adjustedTilePosition)
+		this.#currentTile =
+			this.#tileMap.findTileByExactPosition(adjustedTilePosition)
 
 		return this.#getNewPosition(adjustedTilePosition)
 	}
@@ -180,33 +207,25 @@ export default class Avatar implements IAvatar {
 	#handleFaceClick = (face: PolygonGraphics): void =>
 		createColorInput(hexColor => face.draw(hexColor))
 
-	#moveAlongPath = async (path: Point3D[]): Promise<void> =>
-		await path.reduce(
-			async (previousPromise: Promise<void>, tilePosition: Point3D) => {
-				await previousPromise
-				await this.#moveTo(tilePosition)
-			},
-			Promise.resolve(),
-		)
+	#moveAlongPath = async (path: Point3D[]) => {
+		for (const position of path) await this.#moveTo(position)
+	}
 
 	async #moveTo(position: Point3D): Promise<void> {
-		const tilePosition = cartesianToIsometric(position)
+		const tilePosition = position.clone()
 
-		const cubeMap = container.get<ICubeMap>('ICubeMap')
+		this.#currentTile = this.#tileMap.findTileByExactPosition(tilePosition)
+		this.#targetPosition =
+			cartesianToIsometric(tilePosition).add(AVATAR_OFFSETS)
 
-		const tallestCubeAtTile = cubeMap.findTallestCubeAt(tilePosition)
-
-		const tileMap = container.get<ITileMap>('ITileMap')
-
-		this.#currentTile = tileMap.findTileByExactPosition(tilePosition)
-		this.#targetPosition = tilePosition.add(AVATAR_OFFSETS)
+		const tallestCubeAtTile = this.#cubeMap.findTallestCubeAt(tilePosition)
 
 		this.#targetPosition.z = tallestCubeAtTile
 			? tallestCubeAtTile.position.z + tallestCubeAtTile.size
 			: this.#targetPosition.z
 
 		this.#isMoving = true
-		cubeMap.adjustCubeRenderingOrder()
+		this.adjustRenderingOrder(this.#cubeMap.cubes)
 
 		await new Promise<void>(resolve => (this.#onMovementComplete = resolve))
 	}
@@ -222,27 +241,13 @@ export default class Avatar implements IAvatar {
 	#calculateVelocity(delta: number): Point3D | undefined {
 		if (!this.#direction) return
 
-		const velocity = this.#direction.scale(this.#speed * delta)
-
-		if (!this.#heightDifference) return
-
-		if (this.#direction.z < 0) velocity.z += this.#heightDifference
-
-		return velocity
+		return this.#direction.scale(this.#speed * delta)
 	}
 
 	#stopMovement() {
 		this.#targetPosition = undefined
 		this.#onMovementComplete = undefined
 		this.#isMoving = false
-	}
-
-	get #shouldReachDestination() {
-		return (
-			this.#targetPosition &&
-			this.#position &&
-			this.#position?.distanceTo(this.#targetPosition) <= this.#speed
-		)
 	}
 
 	get #speed(): number {
@@ -256,15 +261,6 @@ export default class Avatar implements IAvatar {
 			this.#position &&
 			this.#targetPosition?.subtract(this.#position).normalize()
 		)
-	}
-
-	get #heightDifference() {
-		if (!this.#position) return
-
-		return this.#targetPosition
-			? isometricToCartesian(this.#targetPosition).z -
-					isometricToCartesian(this.#position).z
-			: 0
 	}
 
 	get container() {

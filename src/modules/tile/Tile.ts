@@ -84,12 +84,13 @@ export default class Tile {
 		this.#container.createHoverEffect()
 	}
 
-	#handlePointerDown = async (event: FederatedPointerEvent) => {
+	async #handlePointerDown(event: FederatedPointerEvent) {
 		if (event.button !== 0) return
 
 		const avatar = container.get<IAvatar>('IAvatar')
 
-		avatar.goalPosition = isometricToCartesian(this.#position)
+		avatar.goalPosition = this.#position.clone()
+
 		await avatar.calculatePath()
 	}
 

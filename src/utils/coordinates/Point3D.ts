@@ -11,11 +11,13 @@ export default class Point3D {
 		this.#z = z
 	}
 
-	copyFrom(point: Point3D): void {
+	copyFrom(point: Point3D) {
 		this.#x = point.x
 		this.#y = point.y
 		this.#z = point.z
 	}
+
+	clone = () => new Point3D(this.#x, this.#y, this.#z)
 
 	equals = (point: Point3D): boolean =>
 		this.#x === point.x && this.#y === point.y && this.#z === point.z

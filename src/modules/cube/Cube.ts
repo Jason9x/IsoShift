@@ -1,4 +1,4 @@
-import { FederatedPointerEvent } from 'pixi.js'
+import { FederatedPointerEvent, Point } from 'pixi.js'
 
 import Tile from '@/modules/tile/Tile'
 
@@ -16,6 +16,7 @@ import container from '@/inversify.config'
 import IAvatar from '@/interfaces/modules/IAvatar'
 import ICamera from '@/interfaces/game/ICamera'
 import ICubeMap from '@/interfaces/modules/ICubeMap'
+import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
 
 export default class Cube {
 	readonly #position: Point3D
@@ -94,7 +95,7 @@ export default class Cube {
 		const cubeMap = container.get<ICubeMap>('ICubeMap')
 
 		cubeMap.sortCubesByPosition()
-		cubeMap.adjustCubeRenderingOrder()
+		avatar.adjustRenderingOrder(cubeMap.cubes)
 
 		this.currentTile?.container.emit('pointerover', event)
 	}
@@ -118,16 +119,22 @@ export default class Cube {
 		)
 			return
 
-		// const offsets = calculateFurnitureOffsets(this.#size)
-		// const newPosition = tile.position.subtract(offsets)
+		const offsets = new Point(this.#size, this.#size)
+		const newPosition = cartesianToIsometric(tile.position).subtract(
+			offsets,
+		)
 
-		// newPosition.z = tallestCubeAtTile
-		// 	? tallestCubeAtTile.position.z + tallestCubeAtTile.size
-		// 	: newPosition.z
+		console.log(tile.position)
 
-		// this.#updatePosition(newPosition)
+		newPosition.z = tallestCubeAtTile
+			? tallestCubeAtTile.position.z + tallestCubeAtTile.size
+			: newPosition.z
 
-		// this.#avatar.adjustPositionOnCubeDrag(this)
+		this.#updatePosition(newPosition)
+
+		const avatar = container.get<IAvatar>('IAvatar')
+
+		avatar.adjustPositionOnCubeDrag(this)
 
 		this.#currentTile = tile
 	}
@@ -148,7 +155,7 @@ export default class Cube {
 		return this.#size
 	}
 
-	get graphics(): CubeContainer {
+	get container(): CubeContainer {
 		return this.#container
 	}
 

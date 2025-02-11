@@ -8,19 +8,19 @@ export const TILE_DIMENSIONS: TileDimensions = {
 
 export const TILE_STYLES: TileStyles = {
 	surface: {
-		fillColor: 0x979764,
-		borderColor: 0x909060,
-		borderWidth: 1,
+		fillColor: 0xd2b48c, // Warm sand color for base
+		borderColor: 0xa0522d, // Rich terracotta for definition
+		borderWidth: 0,
 	},
 	leftBorder: {
-		fillColor: 0x979764,
-		borderColor: 0x2b2b1d,
-		borderWidth: 1,
+		fillColor: 0x8b4513, // Deep chocolate brown for shadow
+		borderColor: 0x654321, // Darker brown for depth
+		borderWidth: 0,
 	},
 	rightBorder: {
-		fillColor: 0x646442,
-		borderColor: 0x2b2b1d,
-		borderWidth: 1,
+		fillColor: 0xcd853f, // Earthy orange-brown for highlights
+		borderColor: 0xa0522d, // Matching terracotta
+		borderWidth: 0,
 	},
 }
 

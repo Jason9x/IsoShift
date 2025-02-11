@@ -21,10 +21,10 @@ export default class TileMap implements ITileMap {
 
 	constructor(
 		@inject('Grid') grid: number[][],
-		@inject('IWallMap') wallmap: IWallMap,
+		@inject('IWallMap') wallMap: IWallMap,
 	) {
 		this.#grid = grid
-		this.#wallMap = wallmap
+		this.#wallMap = wallMap
 		this.#tiles = []
 		this.#container = new Container()
 	}
@@ -51,24 +51,24 @@ export default class TileMap implements ITileMap {
 		)
 	}
 
-	getGridValue = (position: Point): number =>
+	getGridValue = (position: Point) =>
 		this.#grid[position.x]?.[position.y] ?? -1
 
-	findTileByExactPosition = (position: Point3D): Tile | undefined =>
+	findTileByExactPosition = (position: Point3D) =>
 		this.#tiles.find(tile => tile.position.equals(position))
 
-	findTileByPositionInBounds = (position: Point): Tile | undefined =>
+	findTileByPositionInBounds = (position: Point) =>
 		this.#tiles.find(tile => tile.isPositionWithinBounds(position))
 
-	get tiles(): Tile[] {
+	get tiles() {
 		return this.#tiles
 	}
 
-	get container(): Container {
+	get container() {
 		return this.#container
 	}
 
-	get grid(): number[][] {
+	get grid() {
 		return this.#grid
 	}
 }

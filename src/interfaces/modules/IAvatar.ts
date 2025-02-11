@@ -13,6 +13,7 @@ export default interface IAvatar {
 	calculatePath(isRecalculating?: boolean): Promise<void>
 	update(delta: number): Promise<void>
 	adjustPositionOnCubeDrag(cube: Cube): void
+	adjustRenderingOrder(cubes: Cube[]): void
 
 	container: AvatarContainer | undefined
 	position: Point3D | undefined

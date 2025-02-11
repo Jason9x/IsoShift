@@ -11,16 +11,17 @@ import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformati
 import { AVATAR_DIMENSIONS } from '@/constants/Avatar.constants'
 import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
 import IPathfinder from '@/interfaces/modules/IPathfinder'
-import { inject } from 'inversify'
+import { inject, injectable } from 'inversify'
 import ITileMap from '@/interfaces/modules/ITileMap'
 import ICubeMap from '@/interfaces/modules/ICubeMap'
 
+@injectable()
 export default class Pathfinder implements IPathfinder {
 	readonly #tileMap: ITileMap
 	readonly #cubeMap: ICubeMap
 
-	readonly #DIAGONAL_COST: number = Math.sqrt(2)
-	readonly #HORIZONTAL_VERTICAL_COST: number = 1.0
+	readonly #DIAGONAL_COST = Math.sqrt(2)
+	readonly #HORIZONTAL_VERTICAL_COST = 1.0
 
 	constructor(
 		@inject('ITileMap') tileMap: ITileMap,
@@ -198,6 +199,7 @@ export default class Pathfinder implements IPathfinder {
 		const isNarrowerThanAvatar = tallestCubeAtNode
 			? tallestCubeAtNode.size < AVATAR_DIMENSIONS.WIDTH
 			: false
+
 		const maximumHeightThreshold =
 			currentNode.height + AVATAR_DIMENSIONS.HEIGHT / 1.5
 		const isNodeHigher = node.height > maximumHeightThreshold
@@ -216,8 +218,12 @@ export default class Pathfinder implements IPathfinder {
 		return potentialObstaclePositions.every(position => {
 			if (!position) return
 
-			const tile = this.#tileMap.findTileByExactPosition(position)
-			const cube = this.#cubeMap.findTallestCubeAt(position)
+			console.log(position)
+
+			const tile = this.#tileMap.findTileByExactPosition(cartesianToIsometric(position))
+			const cube = this.#cubeMap.findTallestCubeAt(cartesianToIsometric(position))
+
+			console.log(tile, cube)
 
 			return !tile || cube
 		})
@@ -307,15 +313,17 @@ export default class Pathfinder implements IPathfinder {
 			.find(node => node.position.equals(neighborNode.position))
 
 	#calculateGCost(currentNode: Node, neighborNode: Node): number {
-		const delta = new Point(
-			Math.abs(neighborNode.position.x - currentNode.position.x),
-			Math.abs(neighborNode.position.y - currentNode.position.y),
+		const deltaX = Math.abs(
+			neighborNode.position.x - currentNode.position.x,
+		)
+		const deltaY = Math.abs(
+			neighborNode.position.y - currentNode.position.y,
 		)
 
 		const costOfMovement =
-			delta.x - delta.y === 0
-				? this.#DIAGONAL_COST * neighborNode.gCost
-				: this.#HORIZONTAL_VERTICAL_COST * neighborNode.gCost
+			deltaX === 1 && deltaY === 1
+				? this.#DIAGONAL_COST
+				: this.#HORIZONTAL_VERTICAL_COST
 
 		return currentNode.gCost + costOfMovement
 	}

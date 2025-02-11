@@ -2,10 +2,12 @@ import { injectable } from 'inversify'
 
 import { Application, Container, DisplayObject, Point } from 'pixi.js'
 
+import ICamera from '@/interfaces/game/ICamera'
+
 import { MAX_ZOOM, MIN_ZOOM } from '@/constants/Camera.constants'
 
 @injectable()
-export default class Camera {
+export default class Camera implements ICamera {
 	#enabled: boolean = true
 	#initialDragPosition: Point | null = null
 	#zoomFactor: number = 0.1
@@ -26,7 +28,7 @@ export default class Camera {
 		view.addEventListener('wheel', this.#onMouseWheel.bind(this, stage))
 	}
 
-	#onPointerDown(stage: Container<DisplayObject>, event: MouseEvent): void {
+	#onPointerDown(_: Container<DisplayObject>, event: MouseEvent): void {
 		if (event.button !== 0 || !this.#enabled) return
 
 		this.#initialDragPosition = new Point(event.clientX, event.clientY)

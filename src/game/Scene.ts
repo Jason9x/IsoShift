@@ -33,8 +33,8 @@ export default class Scene implements IScene {
 		this.#camera = camera
 		this.#tileMap = tileMap
 		this.#wallMap = wallMap
-		this.#avatar = avatar
 		this.#cubeMap = cubeMap
+		this.#avatar = avatar
 	}
 
 	centerStage({ screen, stage }: Application) {
@@ -48,22 +48,24 @@ export default class Scene implements IScene {
 		settings.ROUND_PIXELS = true
 
 		this.#camera.setupEventListeners(application)
+
 		this.#initializeTileMap()
 		this.#initializeMockedCubes()
-
 		this.#initializeAvatar()
+
 		this.#addObjectsToStage(application)
 
 		this.centerStage(application)
 		this.#startTicker()
 	}
 
-	#initializeTileMap = () => {
-		this.#tileMap.generate()
-	}
-
 	#initializeMockedCubes = () => {
 		this.#cubeMap.populateSceneWithCubes()
+		this.#cubeMap.sortCubesByPosition()
+	}
+
+	#initializeTileMap = () => {
+		this.#tileMap.generate()
 	}
 
 	#initializeAvatar() {
@@ -77,10 +79,11 @@ export default class Scene implements IScene {
 			this.#wallMap.container,
 			this.#tileMap.container,
 			this.#avatar.container,
+			this.#cubeMap.container,
 		)
 	}
 
 	#startTicker = () => Ticker.shared.add(this.#update.bind(this))
 
-	#update = (delta: number) => this.#avatar?.update(delta)
+	#update = (delta: number) => this.#avatar.update(delta)
 }
