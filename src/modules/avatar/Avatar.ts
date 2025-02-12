@@ -116,7 +116,8 @@ export default class Avatar implements IAvatar {
 	adjustPositionOnCubeDrag = (cube: Cube) => {
 		if (!this.#currentTile || cube.currentTile !== this.#currentTile) return
 
-		const newPosition = this.#currentTile.position.add(AVATAR_OFFSETS)
+		const newPosition = cartesianToIsometric(this.#currentTile.position).add(AVATAR_OFFSETS)
+
 		const tallestCubeAtTile = this.#cubeMap.findTallestCubeAt(
 			this.#currentTile.position
 		)
