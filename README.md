@@ -1,29 +1,63 @@
-# Habbo Origins Modern Client Test
+## Overview  
+**IsoShift** is an interactive isometric room environment. Explore the room, move objects, and manipulate the space in a clean 2.5D perspective. Navigate your avatar by clicking on the screen, drag cubes around, and stack them to reach new heights. This project combines simplicity with engaging interactivity.
 
-**Disclaimer:** This is a test project. It  may contain bugs or instabilities.
+---
 
-# How to Use
+## Features  
+- **Isometric Rendering:** A visually appealing 2.5D perspective for the room, walls and floor.  
+- **Avatar Movement:** Click anywhere on the screen to move the avatar to that location.  
+- **Drag-and-Drop Cubes:** Interact with cubes by dragging them around the room.  
+- **Stacking Mechanics:** Stack cubes to create platforms and reach higher areas.  
+- **Dynamic Environment:** A responsive and interactive space that adapts to your actions.  
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/slogga-dev/Habbo-Origins-Modern-Client.git
-   ```
-2. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Start the Development Server:**
-   ```bash
-   npm start
-   ```
-4. **Access the Client:**
-   Open your web browser and navigate to `http://localhost:8080`.
+---
 
-# Known Issues and Limitations
+## Getting Started  
 
-* **Incomplete Feature Set:** Some features from the original game may not be fully implemented or may have limitations.
-* **Bugs and Glitches:** As this is a prototype, there may be unexpected bugs and glitches.
+### Prerequisites  
+- [Node.js](https://nodejs.org/) (for running the project locally)  
+- A modern web browser (Chrome, Firefox, Edge, etc.)  
 
-# License
+### Installation  
+1. Clone the repository:  
+   ```bash  
+   git clone https://github.com/lJason9/IsoShift.git  
+   ```  
+2. Navigate to the project directory:  
+   ```bash  
+   cd IsoShift  
+   ```  
+3. Install dependencies:  
+   ```bash  
+   npm install  
+   ```  
+4. Start the development server:  
+   ```bash  
+   npm start  
+   ```  
+5. Open your browser and visit `http://localhost:8080` to view the project.  
 
-This project is licensed under the MIT License.
+---
+
+## Usage  
+- **Move Avatar:** Click anywhere on the screen to move the avatar to that location.  
+- **Drag Cubes:** Click and drag cubes to reposition them.  
+- **Interact with Cubes:** Use cubes to create pathways or obstacles in the environment.
+
+---
+
+## Built With  
+- [Pixi.js](https://pixijs.com/) - A fast and lightweight 2D rendering library.  
+- Webpack
+- TypeScript
+
+---
+
+## License  
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.  
+
+---
+
+## Acknowledgments  
+- Inspired by classic isometric games and interactive environments.  
+- Built with [Pixi.js](https://pixijs.com/).  
