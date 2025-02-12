@@ -21,7 +21,7 @@
 ### Installation  
 1. Clone the repository:  
    ```bash  
-   git clone https://github.com/lJason9/IsoShift.git  
+   git clone https://github.com/IJason9/IsoShift.git  
    ```  
 2. Navigate to the project directory:  
    ```bash  
