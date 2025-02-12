@@ -122,10 +122,8 @@ export default class Avatar implements IAvatar {
 			this.#currentTile.position
 		)
 
-		newPosition.z =
-			tallestCubeAtTile && cube !== tallestCubeAtTile
-				? tallestCubeAtTile.position.z + tallestCubeAtTile.size
-				: newPosition.z
+		if (tallestCubeAtTile && cube !== tallestCubeAtTile)
+			newPosition.z = tallestCubeAtTile.position.z + tallestCubeAtTile.size
 
 		this.#updatePosition(newPosition)
 	}
