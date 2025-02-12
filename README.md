@@ -54,10 +54,4 @@
 ---
 
 ## License  
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.  
-
----
-
-## Acknowledgments  
-- Inspired by classic isometric games and interactive environments.  
-- Built with [Pixi.js](https://pixijs.com/).  
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
