@@ -1,20 +1,22 @@
-## Overview  
-**IsoShift** is an interactive isometric room environment. Explore the room, move objects, and manipulate the space in a clean 2.5D perspective. Navigate your avatar by clicking on the screen, drag cubes around, and stack them to reach new heights. This project combines simplicity with engaging interactivity.
+## Overview
+**IsoShift** is a player-interactive isometric room environment. Walk around the room, grab objects, and warp the room space in a clean 2.5D representation. Steer your avatar by clicking on screen, move cubes around by dragging, and pile them up to new heights. This project has simplicity combined with engaging interactivity.
 
 ---
 
-## Features  
-- **Isometric Rendering:** A visually appealing 2.5D perspective for the room, walls and floor.  
-- **Avatar Movement:** Click anywhere on the screen to move the avatar to that location.  
-- **Drag-and-Drop Cubes:** Interact with cubes by dragging them around the room.  
-- **Stacking Mechanics:** Stack cubes to create platforms and reach higher areas.  
-- **Dynamic Environment:** A responsive and interactive space that adapts to your actions.  
+## Features
+- **Isometric Rendering:** A clean 2.5D representation for the room, walls and floor.
+- **Avatar Movement:** To move the avatar to any position, just click on the screen.
+- **Drag-and-Drop Cubes:** To play with cubes, drag them around the room.
+- **Stacking Mechanics:** Stack cubes to create platforms and access other areas.
+- **Dynamic Environment:** An interactive and dynamic space which responds to your actions.
 
 ---
 
-## Getting Started  
+## Getting Started
 
-### Prerequisites  
+### Prerequisites
+
+Technology
 - [Node.js](https://nodejs.org/) (for running the project locally)  
 - A modern web browser (Chrome, Firefox, Edge, etc.)  
 
@@ -26,7 +28,7 @@
 2. Navigate to the project directory:  
    ```bash  
    cd IsoShift  
-   ```  
+   ```
 3. Install dependencies:  
    ```bash  
    npm install  
@@ -39,19 +41,19 @@
 
 ---
 
-## Usage  
-- **Move Avatar:** Click anywhere on the screen to move the avatar to that location.  
-- **Drag Cubes:** Click and drag cubes to reposition them.  
-- **Interact with Cubes:** Use cubes to create pathways or obstacles in the environment.
+## Usage
+- **Move Avatar:** Click anywhere on the screen to move the avatar there.  
+- **Drag Cubes:** Click and drag cubes to relocate them.  
+- **Interact with Cubes:** Interact with cubes to create pathways or obstructions in the world.
 
 ---
 
 ## Built With  
 - [Pixi.js](https://pixijs.com/) - A fast and lightweight 2D rendering library.  
-- Webpack
-- TypeScript
+- Webpack  
+- TypeScript  
 
 ---
 
-## License  
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
