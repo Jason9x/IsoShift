@@ -8,6 +8,8 @@
 		"strict": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "preact",
 		"paths": {
 			"@/*": ["./src/*"]
 		},

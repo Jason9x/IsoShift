@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { fileURLToPath, URL } from 'node:url'
+import preact from '@preact/preset-vite'
 
 export default defineConfig({
 	resolve: {
@@ -8,7 +9,12 @@ export default defineConfig({
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
 		},
 	},
-	plugins: [tsconfigPaths()],
+	plugins: [preact(), tsconfigPaths()],
+	esbuild: {
+		jsxFactory: 'h',
+		jsxFragment: 'Fragment',
+		jsxInject: `import { h, Fragment } from 'preact'`,
+	},
 	build: {
 		sourcemap: true,
 		outDir: 'dist',
