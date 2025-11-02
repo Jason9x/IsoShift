@@ -16,6 +16,6 @@ export default class ColorInput {
 
 	addEventListener = (
 		type: string,
-		listener: EventListenerOrEventListenerObject
+		listener: EventListenerOrEventListenerObject,
 	) => this.#inputElement?.addEventListener(type, listener)
 }

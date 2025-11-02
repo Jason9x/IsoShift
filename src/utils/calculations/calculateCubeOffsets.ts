@@ -1,6 +1,6 @@
 import { Point } from 'pixi.js'
 
-import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
+import { TILE_DIMENSIONS } from '@/modules/tile/constants'
 
 const calculateCubeOffsets = (size: number) => {
 	const xOffset = size - TILE_DIMENSIONS.width / 2

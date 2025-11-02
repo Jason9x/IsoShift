@@ -1,7 +1,7 @@
 const convertColorToHex = (color: string) => {
 	// Check if the color has either 3 or 6 hexadecimal characters
 	if (!color.startsWith('#') || (color.length !== 7 && color.length !== 4))
-		return null
+		return
 
 	const hexColor = color.slice(1)
 

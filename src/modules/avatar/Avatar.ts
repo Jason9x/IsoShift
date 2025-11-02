@@ -1,34 +1,19 @@
-import { inject, injectable } from 'inversify'
+import { AvatarContainer } from '@/modules/avatar'
+import { Tile, TileMap, Cube, CubeMap } from '@/modules'
+import { Pathfinder } from '@/engine/pathfinding'
 
-import AvatarContainer from './AvatarContainer'
+import { PolygonGraphics } from '@/shared'
+import { Point3D, cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates'
+import { findClosestValidTilePosition, createColorInput } from '@/utils/helpers'
+import { AVATAR_DIMENSIONS, AVATAR_OFFSETS, AVATAR_SPEED } from '@/modules/avatar/constants'
+import { calculateInitialAvatarPosition } from '@/utils/calculations'
 
-import Tile from '@/modules/tile/Tile'
-import Cube from '@/modules/cube/Cube'
+export default class Avatar {
+	readonly #tileMap: TileMap
+	readonly #cubeMap: CubeMap
+	readonly #grid: number[][]
 
-import ITileMap from '@/interfaces/modules/ITileMap'
-import ICubeMap from '@/interfaces/modules/ICubeMap'
-
-import IPathfinder from '@/interfaces/modules/IPathfinder'
-import IAvatar from '@/interfaces/modules/IAvatar'
-
-import PolygonGraphics from '@/shared/PolygonGraphics'
-
-import Point3D from '@/utils/coordinates/Point3D'
-import { cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
-
-import { findClosestValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
-
-import { AVATAR_DIMENSIONS, AVATAR_OFFSETS, AVATAR_SPEED } from '@/constants/Avatar.constants'
-
-import createColorInput from '@/utils/helpers/colorInputHelper'
-
-import calculateInitialAvatarPosition from '@/utils/calculations/calculateInitialAvatarPosition'
-
-@injectable()
-export default class Avatar implements IAvatar {
-	readonly #tileMap: ITileMap
-	readonly #pathfinder: IPathfinder
-	readonly #cubeMap: ICubeMap
+	#pathfinder?: Pathfinder
 
 	readonly #position: Point3D
 	readonly #container: AvatarContainer
@@ -40,16 +25,20 @@ export default class Avatar implements IAvatar {
 	#onMovementComplete: (() => void) | undefined
 
 	constructor(
-		@inject('ITileMap') tileMap: ITileMap,
-		@inject('IPathfinder') pathfinder: IPathfinder,
-		@inject('ICubeMap') cubeMap: ICubeMap
+		tileMap: TileMap,
+		cubeMap: CubeMap,
+		grid: number[][],
 	) {
 		this.#tileMap = tileMap
-		this.#pathfinder = pathfinder
 		this.#cubeMap = cubeMap
+		this.#grid = grid
 
-		this.#position = calculateInitialAvatarPosition()
+		this.#position = calculateInitialAvatarPosition(this.#tileMap, this.#grid)
 		this.#container = new AvatarContainer(this.#position)
+	}
+
+	setPathfinder(pathfinder: Pathfinder) {
+		this.#pathfinder = pathfinder
 	}
 
 	initialize() {
@@ -79,12 +68,12 @@ export default class Avatar implements IAvatar {
 	}
 
 	async calculatePath(isRecalculating: boolean = false) {
-		if (!this.#currentTile || !this.#goalPosition) return
+		if (!this.#currentTile || !this.#goalPosition || !this.#pathfinder) return
 
 		const path = this.#pathfinder.findPath(
 			this.#currentTile.position,
 			this.#goalPosition,
-			isRecalculating
+			isRecalculating,
 		)
 
 		if (!path) return
@@ -96,7 +85,7 @@ export default class Avatar implements IAvatar {
 		if (!this.#isMoving || !this.#targetPosition) return
 
 		const remainingDistance = this.#position.distanceTo(
-			this.#targetPosition
+			this.#targetPosition,
 		)
 		const velocityMagnitude = this.#speed * delta
 
@@ -113,22 +102,7 @@ export default class Avatar implements IAvatar {
 		this.#updatePosition(newPosition)
 	}
 
-	adjustPositionOnCubeDrag = (cube: Cube) => {
-		if (!this.#currentTile || cube.currentTile !== this.#currentTile) return
-
-		const newPosition = cartesianToIsometric(this.#currentTile.position).add(AVATAR_OFFSETS)
-
-		const tallestCubeAtTile = this.#cubeMap.findTallestCubeAt(
-			this.#currentTile.position
-		)
-
-		if (tallestCubeAtTile && cube !== tallestCubeAtTile)
-			newPosition.z = tallestCubeAtTile.position.z + tallestCubeAtTile.size
-
-		this.#updatePosition(newPosition)
-	}
-
-	adjustRenderingOrder(cubes: Cube[]) {
+	adjustRenderingOrder(cubes: Cube[]): void {
 		const sortedEntities = [...cubes, this]
 
 		sortedEntities.sort((entityA, entityB) => {
@@ -146,7 +120,7 @@ export default class Avatar implements IAvatar {
 			(entity, index) => (entity.container.zIndex = index)
 		)
 
-		this.#cubeMap.container.sortChildren()
+		this.#cubeMap.sortChildren()
 	}
 
 	#getEntityIsometricPosition(entity: Cube | Avatar) {
@@ -192,7 +166,8 @@ export default class Avatar implements IAvatar {
 		if (!this.#currentTile) return
 
 		const validTilePosition = findClosestValidTilePosition(
-			isometricToCartesian(position)
+			isometricToCartesian(position),
+			this.#grid,
 		)
 
 		if (!validTilePosition) return
@@ -208,7 +183,7 @@ export default class Avatar implements IAvatar {
 
 	#setupEventListeners = () =>
 		this.#container.faces.forEach(face =>
-			face?.on('rightdown', this.#handleFaceClick.bind(this, face))
+			face?.on('rightdown', this.#handleFaceClick.bind(this, face)),
 		)
 
 	#handleFaceClick = (face: PolygonGraphics) =>

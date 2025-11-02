@@ -1,5 +1,4 @@
-import ColorInput from '@/utils/color/ColorInput'
-import convertColorToHex from '@/utils/color/convertColorToHex'
+import { ColorInput, convertColorToHex } from '@/utils/color'
 
 const createColorInput = (callback: (hexColor: number) => void) => {
 	const colorInput = ColorInput.instance

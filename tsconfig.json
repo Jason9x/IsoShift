@@ -1,16 +1,17 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
-        "module": "CommonJS",
-        "outDir": "./dist",
-        "strict": true,
-        "baseUrl": "./",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "paths": {
-            "@/*": ["src/*"]
-        }
-    }
+	"compilerOptions": {
+		"target": "ESNext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"verbatimModuleSyntax": true,
+		"module": "ESNext",
+		"strict": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"outDir": "./dist",
+		"types": ["vite/client", "node"]
+	}
 }

@@ -1,29 +1,25 @@
 import { Container } from 'pixi.js'
-import container from '@/inversify.config'
 
-import WallDirection from '@/modules/wall/WallDirection'
-
-import PolygonGraphics from '@/shared/PolygonGraphics'
-
-import { isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
-import Point3D from '@/utils/coordinates/Point3D'
-
-import { BoxFaces } from '@/types/BoxFaces.types'
-
-import { WALL_DIMENSIONS, WALL_SIDE_STYLES } from '@/constants/Wall.constants'
-import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
+import { WallDirection } from '@/modules/wall'
+import { PolygonGraphics } from '@/shared'
+import { isometricToCartesian, Point3D } from '@/utils/coordinates'
+import type { BoxFaces } from './types'
+import { WALL_DIMENSIONS, WALL_SIDE_STYLES } from '@/modules/wall/constants'
+import { TILE_DIMENSIONS } from '@/modules/tile/constants'
 
 export default class WallContainer extends Container {
 	readonly #sides: BoxFaces[]
+	readonly #grid: number[][]
 
-	constructor(position: Point3D, direction: WallDirection) {
+	constructor(position: Point3D, direction: WallDirection, grid: number[][]) {
 		super()
 
 		this.position.copyFrom(position)
+		this.#grid = grid
 		this.#sides = this.#createSides(position, direction)
 
 		this.#sides.forEach(side =>
-			side.forEach(face => face && this.addChild(face))
+			side.forEach(face => face && this.addChild(face)),
 		)
 	}
 
@@ -34,7 +30,7 @@ export default class WallContainer extends Container {
 		directions.forEach(_direction =>
 			direction === _direction
 				? sides.push(this.#createSide(position, _direction))
-				: null
+				: null,
 		)
 
 		return sides
@@ -62,12 +58,11 @@ export default class WallContainer extends Container {
 				: this.#topRightBorderPoints
 
 		const cartesianPosition = isometricToCartesian(position)
-		const grid = container.get<number[][]>('Grid')
 
 		const isAtLeftBorder =
-			cartesianPosition.x === 0 && cartesianPosition.y === grid.length
+			cartesianPosition.x === 0 && cartesianPosition.y === this.#grid.length
 		const isAtRightBorder =
-			cartesianPosition.y === 0 && cartesianPosition.x === grid.length - 1
+			cartesianPosition.y === 0 && cartesianPosition.x === this.#grid.length - 1
 		const isAtBorders = isAtLeftBorder || isAtRightBorder
 
 		return new Map([
@@ -78,8 +73,8 @@ export default class WallContainer extends Container {
 					surfacePoints,
 					wallStyles.surface.borderColor,
 					wallStyles.surface.borderWidth,
-					{ left: true, right: true }
-				)
+					{ left: true, right: true },
+				),
 			],
 			[
 				'left',
@@ -92,9 +87,9 @@ export default class WallContainer extends Container {
 						top: true,
 						bottom: true,
 						left: isAtBorders,
-						right: true
-					}
-				)
+						right: true,
+					},
+				),
 			],
 			[
 				'right',
@@ -107,10 +102,10 @@ export default class WallContainer extends Container {
 						top: true,
 						bottom: true,
 						left: isAtLeftBorder,
-						right: isAtRightBorder
-					}
-				)
-			]
+						right: isAtRightBorder,
+					},
+				),
+			],
 		])
 	}
 
@@ -123,7 +118,7 @@ export default class WallContainer extends Container {
 			TILE_DIMENSIONS.width / 2,
 			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
 			TILE_DIMENSIONS.width / 2,
-			0
+			0,
 		]
 	}
 
@@ -133,12 +128,12 @@ export default class WallContainer extends Container {
 			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
 			-WALL_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.height / 2 +
-			TILE_DIMENSIONS.thickness -
-			WALL_DIMENSIONS.thickness / 2,
+				TILE_DIMENSIONS.thickness -
+				WALL_DIMENSIONS.thickness / 2,
 			-WALL_DIMENSIONS.thickness,
 			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
 			0,
-			-WALL_DIMENSIONS.height
+			-WALL_DIMENSIONS.height,
 		]
 	}
 
@@ -148,12 +143,12 @@ export default class WallContainer extends Container {
 			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
 			TILE_DIMENSIONS.width / 2,
 			-WALL_DIMENSIONS.height -
-			TILE_DIMENSIONS.height / 2 -
-			WALL_DIMENSIONS.thickness,
+				TILE_DIMENSIONS.height / 2 -
+				WALL_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.width / 2,
 			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
 			0,
-			-WALL_DIMENSIONS.height
+			-WALL_DIMENSIONS.height,
 		]
 	}
 
@@ -166,7 +161,7 @@ export default class WallContainer extends Container {
 			TILE_DIMENSIONS.width,
 			-WALL_DIMENSIONS.height,
 			TILE_DIMENSIONS.width,
-			TILE_DIMENSIONS.height / 2
+			TILE_DIMENSIONS.height / 2,
 		]
 	}
 
@@ -176,12 +171,12 @@ export default class WallContainer extends Container {
 			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.height / 2 +
-			TILE_DIMENSIONS.thickness -
-			WALL_DIMENSIONS.thickness / 2,
+				TILE_DIMENSIONS.thickness -
+				WALL_DIMENSIONS.thickness / 2,
 			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
 			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
 			TILE_DIMENSIONS.width,
-			-WALL_DIMENSIONS.height
+			-WALL_DIMENSIONS.height,
 		]
 	}
 
@@ -189,14 +184,14 @@ export default class WallContainer extends Container {
 		return [
 			TILE_DIMENSIONS.width / 2,
 			-WALL_DIMENSIONS.height -
-			TILE_DIMENSIONS.height / 2 -
-			WALL_DIMENSIONS.thickness,
+				TILE_DIMENSIONS.height / 2 -
+				WALL_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
 			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
 			TILE_DIMENSIONS.width,
 			-WALL_DIMENSIONS.height,
 			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2
+			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
 		]
 	}
 

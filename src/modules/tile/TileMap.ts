@@ -1,32 +1,34 @@
-import { inject, injectable } from 'inversify'
-
 import { Container, Point } from 'pixi.js'
 
-import Wall from '../wall/Wall'
-import Tile from '@/modules/tile/Tile'
+import { Wall, Tile, WallMap, Avatar } from '@/modules'
+import type { FaceKey } from './types'
+import { Point3D } from '@/utils/coordinates'
+import { calculateWallDirections } from '@/utils/calculations'
+import { Pathfinder } from '@/engine/pathfinding'
 
-import ITileMap from '@/interfaces/modules/ITileMap'
-import IWallMap from '@/interfaces/modules/IWallMap'
-
-import Point3D from '@/utils/coordinates/Point3D'
-
-import calculateWallDirections from '@/utils/calculations/calculateWallDirections'
-
-@injectable()
-export default class TileMap implements ITileMap {
+export default class TileMap extends Container {
 	readonly #grid: number[][]
-	readonly #wallMap: IWallMap
+	readonly #wallMap: WallMap
 	readonly #tiles: Tile[]
-	readonly #container: Container
+	#avatar?: Avatar
+	#pathfinder?: Pathfinder
 
 	constructor(
-		@inject('Grid') grid: number[][],
-		@inject('IWallMap') wallMap: IWallMap
+		grid: number[][],
+		wallMap: WallMap,
 	) {
+		super()
 		this.#grid = grid
 		this.#wallMap = wallMap
 		this.#tiles = []
-		this.#container = new Container()
+	}
+
+	setAvatar(avatar: Avatar) {
+		this.#avatar = avatar
+	}
+
+	setPathfinder(pathfinder: Pathfinder) {
+		this.#pathfinder = pathfinder
 	}
 
 	generate() {
@@ -35,19 +37,44 @@ export default class TileMap implements ITileMap {
 				if (z === -1) return
 
 				const position = new Point3D(x, y, z)
-				const tile = new Tile(position)
+				const tile = new Tile(position, this.#grid)
 
 				this.#tiles.push(tile)
-				this.#container.addChild(tile.container)
+				this.addChild(tile.container)
+
+				tile.container.on('tile-clicked', this.#handleTileClick)
+				tile.container.on(
+					'tile-face-right-clicked',
+					this.#handleTileFaceRightClick,
+				)
 
 				const wallDirections = calculateWallDirections(x, y)
 
 				wallDirections.forEach(direction => {
-					const wall = new Wall(position, direction)
+					const wall = new Wall(position, direction, this.#grid)
 
 					this.#wallMap.addWall(wall)
 				})
-			})
+			}),
+		)
+	}
+
+	#handleTileClick = async (position: Point3D) => {
+		if (!this.#avatar || !this.#pathfinder) return
+
+		this.#avatar.goalPosition = position.clone()
+
+		void this.#avatar.calculatePath()
+	}
+
+	#handleTileFaceRightClick = (
+		position: Point3D,
+		key: FaceKey,
+		hexColor: string,
+	) => {
+		const numericColor = parseInt(hexColor.replace('#', ''), 16)
+		this.#tiles.forEach(tile =>
+			tile.container?.faces.get(key)?.initialize(numericColor),
 		)
 	}
 
@@ -62,10 +89,6 @@ export default class TileMap implements ITileMap {
 
 	get tiles() {
 		return this.#tiles
-	}
-
-	get container() {
-		return this.#container
 	}
 
 	get grid() {

@@ -1,29 +1,23 @@
 import { FederatedPointerEvent, Point, Polygon } from 'pixi.js'
 
-import Point3D from '@/utils/coordinates/Point3D'
-
-import { TILE_SURFACE_POINTS } from '@/constants/Tile.constants'
-import container from '@/inversify.config'
-
-import TileContainer from './TileContainer'
-
-import { FaceKey } from '@/types/BoxFaces.types'
-
-import createColorInput from '@/utils/helpers/colorInputHelper'
-import { cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
-
-import ITileMap from '@/interfaces/modules/ITileMap'
-import IAvatar from '@/interfaces/modules/IAvatar'
+import { Point3D, cartesianToIsometric, isometricToCartesian } from '@/utils/coordinates'
+import { TILE_SURFACE_POINTS } from '@/modules/tile/constants'
+import { TileContainer } from '@/modules'
+import type { FaceKey } from './types'
+import { createColorInput } from '@/utils/helpers'
 
 export default class Tile {
 	readonly #position: Point3D
 	readonly #container: TileContainer
 
-	constructor(position: Point3D) {
+	readonly #grid: number[][]
+
+	constructor(position: Point3D, grid: number[][]) {
 		this.#position = position
+		this.#grid = grid
 		this.#container = new TileContainer(
 			cartesianToIsometric(this.#position),
-			this.#getBorders()
+			this.#getBorders(),
 		)
 
 		this.#setupEventListeners()
@@ -33,7 +27,7 @@ export default class Tile {
 		const { x, y, z } = cartesianToIsometric(this.#position)
 
 		const transformedPoints = TILE_SURFACE_POINTS.map(
-			(point, index) => point + (index % 2 === 0 ? x : y - z)
+			(point, index) => point + (index % 2 === 0 ? x : y - z),
 		)
 		const polygon = new Polygon(transformedPoints)
 
@@ -42,25 +36,24 @@ export default class Tile {
 
 	#setupEventListeners() {
 		this.#container.faces.forEach((face, key) =>
-			face?.on('rightclick', this.#handleFaceClick.bind(this, key))
+			face?.on('rightclick', this.#handleFaceClick.bind(this, key)),
 		)
 
 		this.#container
-			.on('pointerover', this.#handlePointerOver.bind(this))
-			.on('pointerdown', this.#handlePointerDown.bind(this))
-			.on('pointerout', this.#handlePointerOut.bind(this))
+			.on('pointerover', this.#handlePointerOver) // Bind removed as it's now an arrow function property
+			.on('pointerdown', this.#handlePointerDown) // Bind removed as it's now an arrow function property
+			.on('pointerout', this.#handlePointerOut) // Bind removed as it's now an arrow function property
 	}
 
 	#getBorders = (): [boolean, boolean] => [
 		this.#isTileEmpty(new Point(0, 1)),
-		this.#isTileEmpty(new Point(1, 0))
+		this.#isTileEmpty(new Point(1, 0)),
 	]
 
 	#isTileEmpty(delta: Point) {
 		const { x, y, z } = isometricToCartesian(this.#position)
 
-		const grid = container.get<number[][]>('Grid')
-		const nextRow = grid[x + delta.x]
+		const nextRow = this.#grid[x + delta.x]
 		if (!nextRow) return true
 
 		const tileZ = nextRow[y + delta.y]
@@ -68,29 +61,23 @@ export default class Tile {
 		return !tileZ || tileZ !== z
 	}
 
-	#handleFaceClick = (key: FaceKey) =>
-		createColorInput(hexColor =>
-			container
-				.get<ITileMap>('ITileMap')
-				.tiles.forEach(tile =>
-				tile.container?.faces.get(key)?.initialize(hexColor)
-			)
-		)
+	#handleFaceClick = (key: FaceKey) => {
+		createColorInput(hexColor => {
+			this.#container.emit('tile-face-right-clicked', this.#position.clone(), key, hexColor)
+		})
+	}
 
-	#handlePointerOver() {
+	#handlePointerOver = () => {
 		this.#container.createHoverEffect()
 	}
 
-	async #handlePointerDown(event: FederatedPointerEvent) {
+	#handlePointerDown = (event: FederatedPointerEvent) => {
 		if (event.button !== 0) return
 
-		const avatar = container.get<IAvatar>('IAvatar')
-		avatar.goalPosition = this.#position.clone()
-
-		await avatar.calculatePath()
+		this.#container.emit('tile-clicked', this.#position.clone())
 	}
 
-	#handlePointerOut() {
+	#handlePointerOut = () => {
 		this.#container.destroyHoverEffect()
 	}
 

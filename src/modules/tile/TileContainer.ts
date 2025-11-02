@@ -1,13 +1,9 @@
 import { Container, Graphics } from 'pixi.js'
 
-import PolygonGraphics from '@/shared/PolygonGraphics'
-
-import Point3D from '@/utils/coordinates/Point3D'
-import { isometricToCartesian } from '@/utils/coordinates/coordinateTransformations'
-
-import { BoxFaces } from '@/types/BoxFaces.types'
-
-import { TILE_DIMENSIONS, TILE_STYLES } from '@/constants/Tile.constants'
+import { PolygonGraphics } from '@/shared'
+import { Point3D, isometricToCartesian } from '@/utils/coordinates'
+import type { BoxFaces } from './types'
+import { TILE_DIMENSIONS, TILE_STYLES } from '@/modules/tile/constants'
 
 export default class TileContainer extends Container {
 	readonly #faces: BoxFaces
@@ -37,34 +33,34 @@ export default class TileContainer extends Container {
 						top: !isAtFirstRow,
 						bottom: false,
 						left: !isAtFirstColumn && hasLeftBorder,
-						right: hasRightBorder
-					}
-				)
+						right: hasRightBorder,
+					},
+				),
 			],
 			[
 				'left',
 				hasLeftBorder
 					? new PolygonGraphics(
-						TILE_STYLES.leftBorder.fillColor,
-						this.#leftBorderPoints,
-						TILE_STYLES.leftBorder.borderColor,
-						TILE_STYLES.leftBorder.borderWidth,
-						{ top: true, bottom: true }
-					)
-					: null
+							TILE_STYLES.leftBorder.fillColor,
+							this.#leftBorderPoints,
+							TILE_STYLES.leftBorder.borderColor,
+							TILE_STYLES.leftBorder.borderWidth,
+							{ top: true, bottom: true },
+						)
+					: null,
 			],
 			[
 				'right',
 				hasRightBorder
 					? new PolygonGraphics(
-						TILE_STYLES.rightBorder.fillColor,
-						this.#rightBorderPoints,
-						TILE_STYLES.rightBorder.borderColor,
-						TILE_STYLES.rightBorder.borderWidth,
-						{ top: true, bottom: true }
-					)
-					: null
-			]
+							TILE_STYLES.rightBorder.fillColor,
+							this.#rightBorderPoints,
+							TILE_STYLES.rightBorder.borderColor,
+							TILE_STYLES.rightBorder.borderWidth,
+							{ top: true, bottom: true },
+						)
+					: null,
+			],
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))
@@ -76,9 +72,9 @@ export default class TileContainer extends Container {
 		if (this.#hoverEffect) this.destroyHoverEffect()
 
 		this.#hoverEffect = new Graphics()
-		this.#hoverEffect.lineStyle(1, 0xffff00)
-		this.#hoverEffect.drawPolygon(this.#surfacePoints)
-		this.#hoverEffect.endFill()
+		this.#hoverEffect.clear()
+		this.#hoverEffect.setStrokeStyle({ width: 1, color: 0xffff00 })
+		this.#hoverEffect.poly(this.#surfacePoints, true).stroke()
 		this.#hoverEffect.y -= 1
 
 		this.addChild(this.#hoverEffect)
@@ -101,7 +97,7 @@ export default class TileContainer extends Container {
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height,
 			0,
-			TILE_DIMENSIONS.height / 2
+			TILE_DIMENSIONS.height / 2,
 		]
 	}
 
@@ -114,7 +110,7 @@ export default class TileContainer extends Container {
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
 			0,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
 		]
 	}
 
@@ -127,7 +123,7 @@ export default class TileContainer extends Container {
 			TILE_DIMENSIONS.width / 2,
 			TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
 			TILE_DIMENSIONS.width,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
 		]
 	}
 

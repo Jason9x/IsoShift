@@ -1,17 +1,12 @@
 import { Point } from 'pixi.js'
 
-import container from '@/inversify.config'
+import { Point3D } from '@/utils/coordinates'
+import type { ITileMap } from '@/modules/tile/interfaces'
 
-import ITileMap from '@/interfaces/modules/ITileMap'
-
-import Point3D from '@/utils/coordinates/Point3D'
-
-export const isValidTilePosition = (position: Point3D) => {
+export const isValidTilePosition = (position: Point3D, tileMap: ITileMap) => {
 	const { x, y, z } = position
 
 	const position2D = new Point(x, y)
-
-	const tileMap = container.get<ITileMap>('ITileMap')
 
 	if (!isTilePositionInBounds(position, tileMap.grid)) return false
 
@@ -20,25 +15,18 @@ export const isValidTilePosition = (position: Point3D) => {
 	return tileHeight !== -1 && tileHeight === z
 }
 
-const isTilePositionInBounds = (
-	position: Point3D,
-	grid: number[][]
-) => {
+const isTilePositionInBounds = (position: Point3D, grid: number[][]) => {
 	const { x, y } = position
 
 	const maxGridValues = new Point(
 		grid.length - 1,
-		Math.max(...grid.map(row => row.length)) - 1
+		Math.max(...grid.map(row => row.length)) - 1,
 	)
 
 	return x >= 0 && y >= 0 && x <= maxGridValues.x && y <= maxGridValues.y
 }
 
-export const findClosestValidTilePosition = (
-	position: Point3D
-) => {
-	const grid = container.get<number[][]>('Grid')
-
+export const findClosestValidTilePosition = (position: Point3D, grid: number[][]) => {
 	return grid.reduce(
 		(
 			closest: {
@@ -46,7 +34,7 @@ export const findClosestValidTilePosition = (
 				distance: number
 			},
 			row: number[],
-			x: number
+			x: number,
 		) =>
 			row.reduce(
 				(
@@ -55,7 +43,7 @@ export const findClosestValidTilePosition = (
 						distance: number
 					},
 					z: number,
-					y: number
+					y: number,
 				) => {
 					if (z < 0) return innerClosest
 
@@ -73,14 +61,14 @@ export const findClosestValidTilePosition = (
 					if (priority < innerClosest.distance) {
 						return {
 							position: potentialPosition,
-							distance: priority
+							distance: priority,
 						}
 					}
 
 					return innerClosest
 				},
-				closest
+				closest,
 			),
-		{ position: null, distance: Number.POSITIVE_INFINITY }
+		{ position: null, distance: Number.POSITIVE_INFINITY },
 	).position
 }

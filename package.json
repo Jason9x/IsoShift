@@ -1,33 +1,37 @@
 {
-  "name": "isometric-projection",
-  "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "start": "webpack serve --mode development",
-    "build": "webpack --mode production",
-    "lint": "eslint . --config eslint.config.cjs --fix"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "inversify": "^6.0.2",
-    "pixi.js": "^7.1.4",
-    "reflect-metadata": "^0.2.2"
-  },
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.23.0",
-    "@typescript-eslint/parser": "^8.23.0",
-    "css-loader": "^6.8.1",
-    "eslint": "^9.20.0",
-    "heap-js": "^2.3.0",
-    "html-webpack-plugin": "^5.5.3",
-    "style-loader": "^3.3.3",
-    "ts-loader": "^9.4.4",
-    "typescript": "^5.7.3",
-    "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
-  }
+	"name": "isometric-projection",
+	"version": "1.0.0",
+	"description": "",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"lint": "eslint . ",
+		"lint:fix": "eslint .  --fix",
+		"format": "prettier . --write",
+		"format:check": "prettier . --check"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "module",
+	"dependencies": {
+		"pixi-viewport": "^6.0.3",
+		"pixi.js": "^8.14.0"
+	},
+	"devDependencies": {
+		"@babel/preset-typescript": "^7.28.5",
+		"@types/node": "^24.9.2",
+		"@typescript-eslint/eslint-plugin": "^8.46.2",
+		"@typescript-eslint/parser": "^8.46.2",
+		"eslint": "^9.38.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.4",
+		"heap-js": "^2.7.1",
+		"prettier": "^3.6.2",
+		"typescript": "^5.9.3",
+		"vite": "^7.1.12",
+		"vite-plugin-babel": "^1.3.2",
+		"vite-tsconfig-paths": "^5.1.4"
+	}
 }

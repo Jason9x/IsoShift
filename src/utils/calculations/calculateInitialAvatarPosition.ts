@@ -1,16 +1,16 @@
-import Point3D from '@/utils/coordinates/Point3D'
+import { Point3D, cartesianToIsometric } from '@/utils/coordinates'
+import { findClosestValidTilePosition, isValidTilePosition } from '@/utils/helpers'
+import { AVATAR_INITIAL_POSITION, AVATAR_OFFSETS } from '@/modules/avatar/constants'
+import { TileMap } from '@/modules'
 
-import { findClosestValidTilePosition, isValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
-
-import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
-
-import { AVATAR_INITIAL_POSITION, AVATAR_OFFSETS } from '@/constants/Avatar.constants'
-
-const calculateInitialAvatarPosition = (): Point3D => {
+const calculateInitialAvatarPosition = (
+	tileMap: TileMap,
+	grid: number[][],
+): Point3D => {
 	let initialPosition: Point3D = AVATAR_INITIAL_POSITION.clone()
 
-	if (!isValidTilePosition(initialPosition)) {
-		const closest = findClosestValidTilePosition(initialPosition)
+	if (!isValidTilePosition(initialPosition, tileMap)) {
+		const closest = findClosestValidTilePosition(initialPosition, grid)
 
 		if (!closest) throw new Error('No valid avatar start position found')
 

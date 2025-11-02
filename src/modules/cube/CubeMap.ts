@@ -1,38 +1,42 @@
-import { Container, Point } from 'pixi.js'
+import { Container, FederatedPointerEvent, Point } from 'pixi.js'
 
-import { inject, injectable } from 'inversify'
+import { Cube, Tile, TileMap, Avatar } from '@/modules'
+import { Camera } from '@/engine/game'
 
-import Cube from '@/modules/cube/Cube'
-import Tile from '@/modules/tile/Tile'
+import { Point3D, cartesianToIsometric } from '@/utils/coordinates'
+import { findClosestValidTilePosition, isValidTilePosition } from '@/utils/helpers'
+import { calculateCubeOffsets } from '@/utils/calculations'
+import { CUBE_SETTINGS } from '@/modules/cube/constants'
+import { TILE_DIMENSIONS } from '@/modules/tile/constants'
 
-import ICubeMap from '@/interfaces/modules/ICubeMap'
-import ITileMap from '@/interfaces/modules/ITileMap'
+export default class CubeMap extends Container {
+	#tileMap?: TileMap
+	#camera?: Camera
+	#avatar?: Avatar
 
-import Point3D from '@/utils/coordinates/Point3D'
-import { cartesianToIsometric } from '@/utils/coordinates/coordinateTransformations'
-
-import { findClosestValidTilePosition, isValidTilePosition } from '@/utils/helpers/tilePositionHelpers'
-
-import calculateCubeOffsets from '@/utils/calculations/calculateCubeOffsets'
-
-import { CUBE_SETTINGS } from '@/constants/Cube.constants'
-import { TILE_DIMENSIONS } from '@/constants/Tile.constants'
-
-@injectable()
-export default class CubeMap implements ICubeMap {
-	readonly #tileMap: ITileMap
 	readonly #cubes: Cube[]
-	readonly #container: Container
 
-	constructor(@inject('ITileMap') tileMap: ITileMap) {
-		this.#tileMap = tileMap
-
+	constructor() {
+		super()
 		this.#cubes = []
-		this.#container = new Container()
+	}
+
+	setTileMap(tileMap: TileMap) {
+		this.#tileMap = tileMap
+	}
+
+	setCamera(camera: Camera) {
+		this.#camera = camera
+	}
+
+	setAvatar(avatar: Avatar) {
+		this.#avatar = avatar
 	}
 
 	populateSceneWithCubes = () =>
 		CUBE_SETTINGS.forEach(({ position, size }) => {
+			if (!this.#tileMap) return
+
 			let validPosition = this.#getValidTilePosition(position)
 
 			if (!validPosition) return
@@ -53,22 +57,30 @@ export default class CubeMap implements ICubeMap {
 				const data = this.#getClosestValidTileData(validPosition)
 
 				if (!data) return
-
-				({ tilePosition, currentTile, tallestCubeAtTile } = data)
+				;({ tilePosition, currentTile, tallestCubeAtTile } = data)
 			}
 
 			const cubeOffsets = calculateCubeOffsets(size)
 			const finalPosition = this.#getFinalCubePosition(
 				tilePosition,
 				cubeOffsets,
-				tallestCubeAtTile
+				tallestCubeAtTile,
 			)
 
 			if (!currentTile) return
 
-			const cube = new Cube(finalPosition, validSize, currentTile)
+			const cube = new Cube(
+				finalPosition,
+				validSize,
+				currentTile,
+			)
 
 			this.#addCube(cube)
+
+			// Listen for cube events
+			cube.container.on('cube-drag-start', this.#handleCubeDragStart)
+			cube.container.on('cube-drag-move', this.#handleCubeDragMove)
+			cube.container.on('cube-drag-end', this.#handleCubeDragEnd)
 		})
 
 	findTallestCubeAt = (position: Point3D) =>
@@ -84,28 +96,96 @@ export default class CubeMap implements ICubeMap {
 		this.#cubes.sort(this.#sortCubesByPosition)
 		this.#cubes.forEach((cube, index) => (cube.container.zIndex = index))
 
-		this.#container.sortChildren()
+		this.sortChildren()
+	}
+
+	#handleCubeDragStart = () => {
+		if (!this.#camera) return
+		this.#camera.enabled = false
+	}
+
+	#handleCubeDragMove = async (cube: Cube, globalPosition: Point) => {
+		if (!this.#tileMap || !this.#avatar) return
+
+		const mockPointerEvent= {
+            pointerId: 0,
+            width: 1,
+            height: 1,
+            isPrimary: true,
+            pressure: 0.5,
+            button: 0,
+            buttons: 0,
+            clientX: globalPosition.x,
+            clientY: globalPosition.y,
+        } as FederatedPointerEvent;
+
+		cube.currentTile?.container.emit('pointerout', mockPointerEvent)
+		
+		const pointerPosition = this.#tileMap.toLocal(globalPosition)
+		const targetTile = this.#tileMap.findTileByPositionInBounds(pointerPosition)
+
+		if (
+			!targetTile ||
+			targetTile === cube.currentTile ||
+			targetTile === this.#avatar.currentTile
+		)
+			return
+
+		const tallestCubeAtTile = this.findTallestCubeAt(targetTile.position)
+
+		if (
+			tallestCubeAtTile === cube ||
+			(tallestCubeAtTile && cube.size > tallestCubeAtTile.size)
+		)
+			return
+
+		const cubeOffsets = calculateCubeOffsets(cube.size)
+		const newPosition = cartesianToIsometric(targetTile.position).subtract(
+			cubeOffsets,
+		)
+
+		newPosition.z = tallestCubeAtTile
+			? tallestCubeAtTile.position.z + tallestCubeAtTile.size
+			: newPosition.z
+
+		cube.placeOnTile(targetTile, newPosition)
+
+		if (this.#avatar.isMoving) await this.#avatar.calculatePath(true)
+
+		this.sortCubesByPosition()
+		this.#avatar.adjustRenderingOrder(this.#cubes)
+
+		cube.currentTile?.container.emit('pointerover', mockPointerEvent)
+	}
+
+	#handleCubeDragEnd = () => {
+		if (!this.#camera) return
+		this.#camera.enabled = true
 	}
 
 	#getValidTilePosition = (position: Point3D): Point3D | null =>
-		isValidTilePosition(position)
+		this.#tileMap && isValidTilePosition(position, this.#tileMap)
 			? position
-			: findClosestValidTilePosition(position)
+			: this.#tileMap
+			? findClosestValidTilePosition(position, this.#tileMap.grid)
+			: null
 
 	#getValidSize = (size: number): number =>
 		Math.max(8, Math.min(size, TILE_DIMENSIONS.height))
 
 	#getClosestValidTileData(position: Point3D):
 		| {
-		validPosition: Point3D
-		tilePosition: Point3D
-		currentTile: Tile | undefined
-		tallestCubeAtTile: Cube | null
-	}
+				validPosition: Point3D
+				tilePosition: Point3D
+				currentTile: Tile | undefined
+				tallestCubeAtTile: Cube | null
+		  }
 		| undefined {
-		const validPosition = findClosestValidTilePosition(position)
+		const validPosition = this.#tileMap
+			? findClosestValidTilePosition(position, this.#tileMap.grid)
+			: null
 
-		if (!validPosition) return
+		if (!validPosition || !this.#tileMap) return
 
 		const tilePosition = cartesianToIsometric(validPosition)
 		const currentTile = this.#tileMap.findTileByExactPosition(tilePosition)
@@ -117,7 +197,7 @@ export default class CubeMap implements ICubeMap {
 	#getFinalCubePosition(
 		tilePosition: Point3D,
 		offsets: Point,
-		tallestCubeAtTile: Cube | null
+		tallestCubeAtTile: Cube | null,
 	) {
 		const finalPosition = tilePosition.subtract(offsets)
 
@@ -130,7 +210,7 @@ export default class CubeMap implements ICubeMap {
 
 	#addCube(cube: Cube) {
 		this.#cubes.push(cube)
-		this.#container.addChild(cube.container)
+		this.addChild(cube.container)
 	}
 
 	#sortCubesByPosition = (cubeA: Cube, cubeB: Cube) => {
@@ -156,8 +236,5 @@ export default class CubeMap implements ICubeMap {
 	get cubes() {
 		return this.#cubes
 	}
-
-	get container() {
-		return this.#container
-	}
 }
+

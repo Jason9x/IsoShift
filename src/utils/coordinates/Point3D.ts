@@ -26,21 +26,21 @@ export default class Point3D {
 		new Point3D(
 			this.#x + point.x,
 			this.#y + point.y,
-			'z' in point ? this.#z + point.z : this.#z
+			'z' in point ? this.#z + point.z : this.#z,
 		)
 
 	subtract = (point: Point3D | Point) =>
 		new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			'z' in point ? this.#z - point.z : this.#z
+			'z' in point ? this.#z - point.z : this.#z,
 		)
 
 	distanceTo(point: Point3D) {
 		const delta = new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			this.#z - point.z
+			this.#z - point.z,
 		)
 
 		return Math.hypot(delta.x, delta.y, delta.z)
@@ -50,10 +50,10 @@ export default class Point3D {
 		this.magnitude === 0
 			? new Point3D(0, 0, 0)
 			: new Point3D(
-				this.#x / this.magnitude,
-				this.#y / this.magnitude,
-				this.#z / this.magnitude
-			)
+					this.#x / this.magnitude,
+					this.#y / this.magnitude,
+					this.#z / this.magnitude,
+				)
 
 	scale = (factor: number) =>
 		new Point3D(this.x * factor, this.y * factor, this.z * factor)
