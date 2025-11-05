@@ -1,12 +1,12 @@
 import { Application } from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
 
-import { MAX_ZOOM, MIN_ZOOM } from '@/core/engine/game/constants'
+import { MAX_ZOOM, MININUM_ZOOM } from '@/core/engine/game/constants'
 
 export default class Camera {
-	#viewport?: Viewport
+	#viewport: Viewport
 
-	setupEventListeners(application: Application): Viewport {
+	constructor(application: Application) {
 		this.#viewport = new Viewport({
 			screenWidth: application.screen.width,
 			screenHeight: application.screen.height,
@@ -17,8 +17,10 @@ export default class Camera {
 			.drag()
 			.pinch()
 			.wheel()
-			.clampZoom({ minScale: MIN_ZOOM, maxScale: MAX_ZOOM })
+			.clampZoom({ minScale: MININUM_ZOOM, maxScale: MAX_ZOOM })
+	}
 
+	get viewport(): Viewport {
 		return this.#viewport
 	}
 

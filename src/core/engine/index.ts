@@ -1,2 +1,2 @@
-export * from '@/core/engine/game'
-export * from '@/core/engine/pathfinding'
+export * from './game'
+export * from './pathfinding'

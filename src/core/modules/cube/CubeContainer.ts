@@ -1,7 +1,6 @@
 import { Container } from 'pixi.js'
 
-import { PolygonGraphics, Point3D } from '@/core/utils'
-import type { BoxFaces } from '@/core/modules/cube/types'
+import { PolygonGraphics, type BoxFaces, Point3D } from '@/core/utils'
 import { CUBE_FACE_COLORS } from '@/core/modules/cube/constants'
 
 export default class CubeContainer extends Container {
@@ -12,76 +11,62 @@ export default class CubeContainer extends Container {
 		super()
 
 		this.position.set(position.x, position.y - position.z)
+
 		this.#size = size
-		this.#faces = new Map([
-			[
-				'top',
-				new PolygonGraphics(
-					CUBE_FACE_COLORS.topFace,
-					this.#topFacePoints,
-				),
-			],
-			[
-				'left',
-				new PolygonGraphics(
-					CUBE_FACE_COLORS.leftFace,
-					this.#leftFacePoints,
-				),
-			],
-			[
-				'right',
-				new PolygonGraphics(
-					CUBE_FACE_COLORS.rightFace,
-					this.#rightFacePoints,
-				),
-			],
-		])
+		this.#faces = this.#createFaces()
 
 		this.#faces.forEach(face => face && this.addChild(face))
 
 		this.eventMode = 'dynamic'
 	}
 
-	get #topFacePoints() {
-		return [
-			0,
-			0,
-			this.#size,
-			-this.#size / 2,
-			this.#size * 2,
-			0,
-			this.#size,
-			this.#size / 2,
-		]
+	#createFaces(): BoxFaces {
+		const size = this.#size
+
+		return new Map([
+			[
+				'top',
+				new PolygonGraphics(CUBE_FACE_COLORS.topFace, [
+					0,
+					0,
+					size,
+					-size / 2,
+					size * 2,
+					0,
+					size,
+					size / 2,
+				]),
+			],
+			[
+				'left',
+				new PolygonGraphics(CUBE_FACE_COLORS.leftFace, [
+					0,
+					0,
+					0,
+					size,
+					size,
+					size * 1.5,
+					size,
+					size / 2,
+				]),
+			],
+			[
+				'right',
+				new PolygonGraphics(CUBE_FACE_COLORS.rightFace, [
+					size * 2,
+					0,
+					size * 2,
+					size,
+					size,
+					size * 1.5,
+					size,
+					size / 2,
+				]),
+			],
+		])
 	}
 
-	get #leftFacePoints() {
-		return [
-			0,
-			0,
-			0,
-			this.#size,
-			this.#size,
-			this.#size * 1.5,
-			this.#size,
-			this.#size / 2,
-		]
-	}
-
-	get #rightFacePoints() {
-		return [
-			this.#size * 2,
-			0,
-			this.#size * 2,
-			this.#size,
-			this.#size,
-			this.#size * 1.5,
-			this.#size,
-			this.#size / 2,
-		]
-	}
-
-	get faces() {
+	get faces(): BoxFaces {
 		return this.#faces
 	}
 }

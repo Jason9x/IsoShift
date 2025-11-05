@@ -1,61 +1,75 @@
 import { useState } from 'preact/hooks'
-import { grid, wallHeight, wallThickness } from '@/ui/store/grid'
+import type { JSX } from 'preact/jsx-runtime'
 
-const Layout = ({
-	isOpen,
-	onClose,
-}: {
+import { currentRoom, updateRoom } from '@/ui/store/rooms'
+
+type LayoutProps = {
 	isOpen: boolean
 	onClose: () => void
-}) => {
-	const [tempGrid, setTempGrid] = useState(grid.value)
-	const [tempWallHeight, setTempWallHeight] = useState(wallHeight.value)
+}
+
+const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
+	const room = currentRoom()
+
+	const [tempGrid, setTempGrid] = useState(room?.grid)
+	const [tempWallHeight, setTempWallHeight] = useState(room?.wallHeight)
 	const [tempWallThickness, setTempWallThickness] = useState(
-		wallThickness.value,
+		room?.wallThickness
 	)
 
 	if (!isOpen) return null
 
-	if (tempGrid !== grid.value) {
-		setTempGrid(grid.value)
-		setTempWallHeight(wallHeight.value)
-		setTempWallThickness(wallThickness.value)
+	if (tempGrid !== room?.grid) {
+		setTempGrid(room?.grid)
+		setTempWallHeight(room?.wallHeight)
+		setTempWallThickness(room?.wallThickness)
 	}
 
 	const handleTileClick = (x: number, y: number) => {
-		const current = tempGrid[x][y]
-		const newGrid = tempGrid.map(row => [...row])
+		const current = tempGrid?.[x][y]
+		const newGrid = tempGrid?.map(row => [...row])
+
+		if (!newGrid || !current) return
+
 		newGrid[x][y] = current === -1 ? 0 : current + 1
 		setTempGrid(newGrid)
 	}
 
-	const handleTileRightClick = (e: MouseEvent, x: number, y: number) => {
-		e.preventDefault()
+	const handleTileRightClick = (event: MouseEvent, x: number, y: number) => {
+		event.preventDefault()
+
+		if (!tempGrid) return
+
 		const current = tempGrid[x][y]
 		const newGrid = tempGrid.map(row => [...row])
+
 		newGrid[x][y] = current <= 0 ? -1 : current - 1
 		setTempGrid(newGrid)
 	}
 
 	const handleSave = () => {
-		grid.value = tempGrid
-		wallHeight.value = tempWallHeight
-		wallThickness.value = tempWallThickness
+		updateRoom({
+			grid: tempGrid,
+			wallHeight: tempWallHeight,
+			wallThickness: tempWallThickness,
+		})
 		onClose()
 	}
 
 	const handleReset = () => {
-		setTempGrid(grid.value)
-		setTempWallHeight(wallHeight.value)
-		setTempWallThickness(wallThickness.value)
+		setTempGrid(room?.grid)
+		setTempWallHeight(room?.wallHeight)
+		setTempWallThickness(room?.wallThickness)
 	}
 
 	const handleExpand = (dir: 'right' | 'bottom') => {
+		if (!tempGrid) return
 		if (dir === 'right') setTempGrid(tempGrid.map(row => [...row, 0]))
 		else setTempGrid([...tempGrid, Array(tempGrid[0].length).fill(0)])
 	}
 
 	const handleShrink = (dir: 'right' | 'bottom') => {
+		if (!tempGrid) return
 		if (dir === 'right' && tempGrid[0].length > 1)
 			setTempGrid(tempGrid.map(row => row.slice(0, -1)))
 		else if (dir === 'bottom' && tempGrid.length > 1)
@@ -120,7 +134,7 @@ const Layout = ({
 
 					<div className="flex flex-col gap-2">
 						<div className="grid gap-1">
-							{tempGrid.map((row, x) => (
+							{tempGrid?.map((row, x) => (
 								<div key={x} className="flex gap-1">
 									{row.map((height, y) => (
 										<button

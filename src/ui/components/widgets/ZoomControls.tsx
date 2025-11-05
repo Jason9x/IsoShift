@@ -1,13 +1,19 @@
+import type { JSX } from 'preact/jsx-runtime'
+
 import { zoom, updateZoom } from '@/ui/store/zoom'
 
-const ZoomControls = ({ isOpen }: { isOpen: boolean }) => {
-	const handleZoomIn = () => {
+type ZoomControlsProps = {
+	isOpen: boolean
+}
+
+const ZoomControls = ({ isOpen }: ZoomControlsProps): JSX.Element | null => {
+	const handleZoomIn = (): void => {
 		const newZoom = Math.min(zoom.value + 0.1, 2.0)
-		
+
 		updateZoom(newZoom)
 	}
 
-	const handleZoomOut = () => {
+	const handleZoomOut = (): void => {
 		const newZoom = Math.max(zoom.value - 0.1, 0.5)
 
 		updateZoom(newZoom)

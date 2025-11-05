@@ -1,4 +1,4 @@
-import { Point } from 'pixi.js'
+import type { Point } from 'pixi.js'
 
 export default class Point3D {
 	#x: number
@@ -11,62 +11,60 @@ export default class Point3D {
 		this.#z = z
 	}
 
-	copyFrom(point: Point3D) {
+	copyFrom(point: Point3D): void {
 		this.#x = point.x
 		this.#y = point.y
 		this.#z = point.z
 	}
 
-	clone = () => new Point3D(this.#x, this.#y, this.#z)
-
-	equals = (point: Point3D) =>
+	equals = (point: Point3D): boolean =>
 		this.#x === point.x && this.#y === point.y && this.#z === point.z
 
-	add = (point: Point3D | Point) =>
+	add = (point: Point3D | Point): Point3D =>
 		new Point3D(
 			this.#x + point.x,
 			this.#y + point.y,
-			'z' in point ? this.#z + point.z : this.#z,
+			'z' in point ? this.#z + point.z : this.#z
 		)
 
-	subtract = (point: Point3D | Point) =>
+	subtract = (point: Point3D | Point): Point3D =>
 		new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			'z' in point ? this.#z - point.z : this.#z,
+			'z' in point ? this.#z - point.z : this.#z
 		)
 
-	distanceTo(point: Point3D) {
+	distanceTo(point: Point3D): number {
 		const delta = new Point3D(
 			this.#x - point.x,
 			this.#y - point.y,
-			this.#z - point.z,
+			this.#z - point.z
 		)
 
 		return Math.hypot(delta.x, delta.y, delta.z)
 	}
 
-	normalize = () =>
+	normalize = (): Point3D =>
 		this.magnitude === 0
 			? new Point3D(0, 0, 0)
 			: new Point3D(
 					this.#x / this.magnitude,
 					this.#y / this.magnitude,
-					this.#z / this.magnitude,
+					this.#z / this.magnitude
 				)
 
-	scale = (factor: number) =>
+	scale = (factor: number): Point3D =>
 		new Point3D(this.x * factor, this.y * factor, this.z * factor)
 
-	get x() {
+	get x(): number {
 		return this.#x
 	}
 
-	get y() {
+	get y(): number {
 		return this.#y
 	}
 
-	get z() {
+	get z(): number {
 		return this.#z
 	}
 
@@ -74,7 +72,7 @@ export default class Point3D {
 		this.#z = value
 	}
 
-	get magnitude() {
+	get magnitude(): number {
 		return Math.hypot(this.#x, this.#y, this.#z)
 	}
 }

@@ -15,7 +15,7 @@ export const AVATAR_DIMENSIONS = {
 
 export const AVATAR_OFFSETS: Point = new Point(
 	TILE_DIMENSIONS.width / 2 - AVATAR_DIMENSIONS.WIDTH,
-	TILE_DIMENSIONS.height / 2,
+	TILE_DIMENSIONS.height / 2
 )
 
 export const AVATAR_INITIAL_POSITION: Point3D = new Point3D(0, 0, 0)

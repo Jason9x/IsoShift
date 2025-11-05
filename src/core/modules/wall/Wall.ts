@@ -1,20 +1,16 @@
 import { WallDirection, WallContainer } from '@/core/modules/wall'
-import type { FaceKey } from '@/core/modules/wall/types'
 import { Point3D, cartesianToIsometric, createColorInput } from '@/core/utils'
 
 export default class Wall {
-	readonly #position: Point3D
 	readonly #direction: WallDirection
 	readonly #container: WallContainer
 
 	constructor(position: Point3D, direction: WallDirection, grid: number[][]) {
-		this.#position = position
 		this.#direction = direction
-		this.#container = new WallContainer(
-			cartesianToIsometric(this.#position),
-			this.#direction,
-			grid,
-		)
+
+		const isometricPosition = cartesianToIsometric(position)
+
+		this.#container = new WallContainer(isometricPosition, direction, grid)
 
 		this.#setupEventListeners()
 	}
@@ -22,25 +18,24 @@ export default class Wall {
 	#setupEventListeners = () =>
 		this.#container.sides.forEach(side =>
 			side.forEach((face, key) =>
-				face?.on('rightclick', this.#handleFaceClick.bind(this, key)),
-			),
+				face?.on('rightclick', () =>
+					createColorInput(hexColor =>
+						this.#container.emit(
+							'wall-face-right-clicked',
+							this.#direction,
+							key,
+							hexColor
+						)
+					)
+				)
+			)
 		)
 
-	#handleFaceClick = (key: FaceKey) =>
-		createColorInput(hexColor =>
-			this.#container.emit(
-				'wall-face-right-clicked',
-				this.#direction,
-				key,
-				hexColor,
-			),
-		)
-
-	get container() {
+	get container(): WallContainer {
 		return this.#container
 	}
 
-	get direction() {
+	get direction(): WallDirection {
 		return this.#direction
 	}
 }

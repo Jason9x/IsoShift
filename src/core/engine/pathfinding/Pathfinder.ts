@@ -1,46 +1,59 @@
-import { Point } from 'pixi.js'
-
 import Heap from 'heap-js'
 
-import { Node } from '@/core/engine/pathfinding'
-import type { TileMap } from '@/core/modules/tile'
-import type { CubeLayer } from '@/core/modules/cube'
+import PathNode from './PathNode'
+
+import type { TileMap, CubeLayer } from '@/core/modules'
+
+import { Point3D, isValidTilePosition } from '@/core/utils'
 
 import {
-	Point3D,
-	cartesianToIsometric,
-	isometricToCartesian,
-} from '@/core/utils/coordinates'
-import { isValidTilePosition } from '@/core/utils/helpers'
+	calculateGCost,
+	getNeighborPositions,
+	isObstacle,
+	isPathObstructed,
+	reconstructPath,
+	updateNodeHeight,
+} from './PathfindingHelpers'
 
-import { AVATAR_DIMENSIONS } from '@/core/modules/avatar/constants'
-import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
+type PathfindingContext = {
+	tileMap?: TileMap
+	cubeLayer?: CubeLayer
+}
+
+export type RequiredPathfindingContext = {
+	tileMap: TileMap
+	cubeLayer: CubeLayer
+}
 
 export default class Pathfinder {
-	readonly #tileMap: TileMap
-	readonly #cubeLayer: CubeLayer
+	static findPath({
+		start,
+		goal,
+		tileMap,
+		cubeLayer,
+	}: {
+		start?: Point3D
+		goal: Point3D
+	} & PathfindingContext): Point3D[] | null {
+		if (!start || !tileMap || !cubeLayer) return null
 
-	readonly #DIAGONAL_COST = Math.sqrt(2)
-	readonly #HORIZONTAL_VERTICAL_COST = 1.0
+		const context: RequiredPathfindingContext = { tileMap, cubeLayer }
 
-	constructor(tileMap: TileMap, cubeLayer: CubeLayer) {
-		this.#tileMap = tileMap
-		this.#cubeLayer = cubeLayer
-	}
+		const isValidInput =
+			isValidTilePosition(start, tileMap) &&
+			isValidTilePosition(goal, tileMap) &&
+			!start.equals(goal)
 
-	findPath(
-		startPosition: Point3D,
-		goalPosition: Point3D,
-		isRecalculating: boolean,
-	) {
-		if (!this.#validateInput(startPosition, goalPosition)) return null
+		if (!isValidInput) return null
 
 		const [openList, closedList] = [
-			this.#initializeOpenList(),
-			new Set<Node>(),
+			new Heap<PathNode>((a, b) => a.fCost - b.fCost),
+			new Set<PathNode>(),
 		]
 
-		let startNode = this.#createStartNode(startPosition, goalPosition)
+		const startNode = new PathNode(start)
+		startNode.fCost = start.distanceTo(goal)
+
 		let closestNode = startNode
 
 		openList.add(startNode)
@@ -48,185 +61,81 @@ export default class Pathfinder {
 		while (!openList.isEmpty()) {
 			const currentNode = openList.pop()
 
-			if (!currentNode || this.#isInClosedList(currentNode, closedList))
-				continue
+			if (!currentNode) continue
 
-			this.#updateNodeHeight(currentNode)
+			const isCurrentNodeInClosedList = [...closedList].some(node =>
+				node.position.equals(currentNode.position)
+			)
+
+			if (isCurrentNodeInClosedList) continue
+
+			updateNodeHeight(currentNode, context)
 
 			closedList.add(currentNode)
 
 			if (currentNode.fCost < closestNode.fCost) closestNode = currentNode
 
-			if (currentNode.position.equals(goalPosition))
-				return this.#reconstructPath(currentNode)
+			if (currentNode.position.equals(goal))
+				return reconstructPath(currentNode)
 
-			this.#getNeighborNodes(currentNode).forEach(neighborNode =>
-				this.#processNeighborNode(
-					neighborNode,
-					currentNode,
+			const neighborPositions = getNeighborPositions(
+				context,
+				currentNode.position
+			)
+
+			const neighborPathNodes = neighborPositions.map(
+				position => new PathNode(position)
+			)
+
+			neighborPathNodes.forEach(neighborPathNode =>
+				this.#processNeighborNode({
+					context,
+					neighborNode: neighborPathNode,
+					currentNode: currentNode,
 					openList,
-					goalPosition,
-				),
+					goal,
+				})
 			)
 		}
 
-		return isRecalculating ? this.#reconstructPath(closestNode) : null
+		return reconstructPath(closestNode)
 	}
 
-	#validateInput = (startPosition: Point3D, goalPosition: Point3D) =>
-		isValidTilePosition(startPosition, this.#tileMap) &&
-		isValidTilePosition(goalPosition, this.#tileMap) &&
-		!startPosition.equals(goalPosition)
-
-	#initializeOpenList = () => new Heap<Node>((a, b) => a.fCost - b.fCost)
-
-	#createStartNode(startPosition: Point3D, goalPosition: Point3D) {
-		const node = new Node(startPosition)
-		node.fCost = startPosition.distanceTo(goalPosition)
-		return node
-	}
-
-	#isInClosedList = (node: Node, closedList: Set<Node>) =>
-		[...closedList].some(n => n.position.equals(node.position))
-
-	#updateNodeHeight(node: Node) {
-		const tallestCubeAtNode = this.#cubeLayer.findTallestCubeAt(
-			node.position,
-		)
-
-		node.height = tallestCubeAtNode
-			? tallestCubeAtNode.position.z + tallestCubeAtNode.size
-			: node.position.z + TILE_DIMENSIONS.thickness
-	}
-
-	#reconstructPath(goalNode: Node) {
-		const path: Point3D[] = []
-		let node: Node | null = goalNode
-		while (node) {
-			path.push(node.position)
-			node = node.parent
-		}
-		return path.reverse()
-	}
-
-	#getNeighborNodes = (node: Node) =>
-		this.#getNeighborPositions(node.position).map(pos => new Node(pos))
-
-	#getNeighborPositions(position: Point3D) {
-		const offsets = [
-			[-1, 0],
-			[1, 0],
-			[0, -1],
-			[0, 1],
-			[-1, -1],
-			[1, 1],
-			[-1, 1],
-			[1, -1],
-		]
-
-		return offsets
-			.map(([dx, dy]) => {
-				const x = position.x + dx
-				const y = position.y + dy
-				const z = this.#tileMap.getGridValue(new Point(x, y))
-				return new Point3D(x, y, z)
-			})
-			.filter(pos => isValidTilePosition(pos, this.#tileMap))
-	}
-
-	#processNeighborNode(
-		neighborNode: Node,
-		currentNode: Node,
-		openList: Heap<Node>,
-		goalPosition: Point3D,
-	) {
-		this.#updateNodeHeight(neighborNode)
+	static #processNeighborNode({
+		context,
+		neighborNode,
+		currentNode,
+		openList,
+		goal,
+	}: {
+		context: RequiredPathfindingContext
+		neighborNode: PathNode
+		currentNode: PathNode
+		openList: Heap<PathNode>
+		goal: Point3D
+	}): void {
+		updateNodeHeight(neighborNode, context)
 
 		if (
-			this.#isObstacle(neighborNode, currentNode) ||
-			this.#isPathObstructed(neighborNode, currentNode)
+			isObstacle(context, neighborNode, currentNode) ||
+			isPathObstructed(context, neighborNode, currentNode)
 		)
 			return
 
-		const gCost = this.#calculateGCost(currentNode, neighborNode)
-		const hCost = neighborNode.position.distanceTo(goalPosition)
+		const gCost = calculateGCost(currentNode, neighborNode)
+		const hCost = neighborNode.position.distanceTo(goal)
 		const fCost = gCost + hCost
 
-		const existingNode = this.#findExistingNode(neighborNode, openList)
-
-		if (existingNode && fCost >= existingNode.fCost) return
-
-		this.#updateNeighborNode(neighborNode, gCost, fCost, currentNode)
-
-		if (existingNode) return
-
-		openList.push(neighborNode)
-	}
-
-	#isObstacle(neighborNode: Node, currentNode: Node) {
-		const cube = this.#cubeLayer.findTallestCubeAt(neighborNode.position)
-		const isNarrow = cube && cube.size < AVATAR_DIMENSIONS.WIDTH
-		const maxHeight = currentNode.height + AVATAR_DIMENSIONS.HEIGHT / 1.5
-		const isTooHigh = neighborNode.height > maxHeight
-
-		return isNarrow || isTooHigh
-	}
-
-	#isPathObstructed(node: Node, currentNode: Node) {
-		if (!this.#isDiagonalMove(node, currentNode)) return false
-
-		const dir = new Point(
-			node.position.x - currentNode.position.x,
-			node.position.y - currentNode.position.y,
-		)
-
-		const checkPosition = (x: number, y: number) => {
-			const z = this.#tileMap.getGridValue(new Point(x, y))
-			const pos = cartesianToIsometric(new Point3D(x, y, z))
-			const tile = this.#tileMap.findTileByExactPosition(
-				isometricToCartesian(pos),
-			)
-			const cube = this.#cubeLayer.findTallestCubeAt(
-				isometricToCartesian(pos),
-			)
-
-			return !tile || cube
-		}
-
-		return (
-			checkPosition(node.position.x, node.position.y - dir.y) &&
-			checkPosition(node.position.x - dir.x, node.position.y)
-		)
-	}
-
-	#isDiagonalMove = (node: Node, currentNode: Node) =>
-		Math.abs(node.position.x - currentNode.position.x) === 1 &&
-		Math.abs(node.position.y - currentNode.position.y) === 1
-
-	#findExistingNode = (neighborNode: Node, openList: Heap<Node>) =>
-		openList
+		const existingNode = openList
 			.toArray()
 			.find(node => node.position.equals(neighborNode.position))
 
-	#calculateGCost(currentNode: Node, neighborNode: Node) {
-		const dx = Math.abs(neighborNode.position.x - currentNode.position.x)
-		const dy = Math.abs(neighborNode.position.y - currentNode.position.y)
-		const cost =
-			dx === 1 && dy === 1
-				? this.#DIAGONAL_COST
-				: this.#HORIZONTAL_VERTICAL_COST
+		if (existingNode && fCost >= existingNode.fCost) return
 
-		return currentNode.gCost + cost
-	}
+		neighborNode.gCost = gCost
+		neighborNode.fCost = fCost
+		neighborNode.parent = currentNode
 
-	#updateNeighborNode(
-		node: Node,
-		gCost: number,
-		fCost: number,
-		parent: Node,
-	) {
-		node.gCost = gCost
-		node.fCost = fCost
-		node.parent = parent
+		openList.push(neighborNode)
 	}
 }

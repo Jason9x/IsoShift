@@ -9,14 +9,14 @@ import {
 } from '@/core/modules/avatar/constants'
 import { TileMap } from '@/core/modules'
 
-const calculateInitialAvatarPosition = (
-	tileMap: TileMap,
-	grid: number[][],
-): Point3D => {
-	let initialPosition: Point3D = AVATAR_INITIAL_POSITION.clone()
+const calculateInitialAvatarPosition = (tileMap: TileMap): Point3D => {
+	let initialPosition: Point3D = AVATAR_INITIAL_POSITION
 
 	if (!isValidTilePosition(initialPosition, tileMap)) {
-		const closest = findClosestValidTilePosition(initialPosition, grid)
+		const closest = findClosestValidTilePosition(
+			initialPosition,
+			tileMap.grid
+		)
 
 		if (!closest) throw new Error('No valid avatar start position found')
 

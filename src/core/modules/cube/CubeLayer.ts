@@ -1,6 +1,7 @@
 import { Container, FederatedPointerEvent, Point } from 'pixi.js'
 
-import { Cube, Tile, TileMap, Avatar } from '@/core/modules'
+import { Cube, Tile, TileMap } from '@/core/modules'
+import type { Avatar } from '@/core/modules/avatar'
 import { Camera } from '@/core/engine/game'
 
 import { Point3D, cartesianToIsometric } from '@/core/utils/coordinates'
@@ -9,7 +10,7 @@ import {
 	isValidTilePosition,
 } from '@/core/utils/helpers'
 import { calculateCubeOffsets } from '@/core/utils/calculations'
-import { CUBE_SETTINGS } from '@/core/modules/cube/constants'
+import type { CubeData } from '@/ui/store/rooms'
 import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 
 export default class CubeLayer extends Container {
@@ -18,13 +19,16 @@ export default class CubeLayer extends Container {
 	#avatar?: Avatar
 
 	readonly #cubes: Cube[]
+	readonly #cubeData: CubeData[]
+	#blueprintCube?: Cube
 
-	constructor() {
+	constructor(cubeData: CubeData[] = []) {
 		super()
 		this.#cubes = []
+		this.#cubeData = cubeData
 	}
 
-	initialize(tileMap: TileMap, camera: Camera, avatar: Avatar) {
+	initialize(tileMap: TileMap, camera: Camera, avatar: Avatar): void {
 		this.#tileMap = tileMap
 		this.#camera = camera
 		this.#avatar = avatar
@@ -32,13 +36,20 @@ export default class CubeLayer extends Container {
 		this.#populateSceneWithCubes()
 		this.sortCubesByPosition()
 		this.addChild(avatar.container)
+
+		tileMap.on('place-cube', this.#handlePlaceCube)
+		tileMap.on('show-blueprint', this.#handleShowBlueprint)
+		tileMap.on('hide-blueprint', this.#handleHideBlueprint)
+		tileMap.on('disable-cubes', this.#disableCubes)
+		tileMap.on('enable-cubes', this.#enableCubes)
 	}
 
 	#populateSceneWithCubes = () =>
-		CUBE_SETTINGS.forEach(({ position, size }) => {
+		this.#cubeData.forEach(({ position, size }) => {
 			if (!this.#tileMap) return
 
-			let validPosition = this.#getValidTilePosition(position)
+			const pos = new Point3D(position.x, position.y, position.z)
+			let validPosition = this.#getValidTilePosition(pos)
 
 			if (!validPosition) return
 
@@ -65,7 +76,7 @@ export default class CubeLayer extends Container {
 			const finalPosition = this.#getFinalCubePosition(
 				tilePosition,
 				cubeOffsets,
-				tallestCubeAtTile,
+				tallestCubeAtTile
 			)
 
 			if (!currentTile) return
@@ -75,12 +86,13 @@ export default class CubeLayer extends Container {
 			this.#addCube(cube)
 
 			// Listen for cube events
+			cube.container.on('cube-clicked', this.#handleCubeClick)
 			cube.container.on('cube-drag-start', this.#handleCubeDragStart)
 			cube.container.on('cube-drag-move', this.#handleCubeDragMove)
 			cube.container.on('cube-drag-end', this.#handleCubeDragEnd)
 		})
 
-	findTallestCubeAt = (position: Point3D) =>
+	findTallestCubeAt = (position: Point3D): Cube | null =>
 		this.#cubes.reduce((currentTallest: Cube | null, cube: Cube) => {
 			const isAtPosition = cube.currentTile?.position.equals(position)
 			const isTaller =
@@ -96,9 +108,35 @@ export default class CubeLayer extends Container {
 		this.sortChildren()
 	}
 
-	#handleCubeDragStart = () => {
+	#handleCubeClick = async (cube: Cube, globalPosition: Point) => {
+		const { cubeMenuState } = await import('@/ui/store/cubeMenu')
+		cubeMenuState.value = {
+			x: globalPosition.x,
+			y: globalPosition.y,
+			onRotate: () => console.log('Rotate cube'),
+			onMove: () => {
+				this.#camera!.enabled = false
+				cube.container.alpha = 0.5
+				cube.enableDrag()
+			},
+			onDelete: () => {
+				const index = this.#cubes.indexOf(cube)
+				if (index > -1) {
+					this.#cubes.splice(index, 1)
+					this.removeChild(cube.container)
+					cube.container.destroy()
+					this.sortCubesByPosition()
+					if (this.#avatar) this.adjustRenderingOrder(this.#avatar)
+					this.#saveRoomCubes()
+				}
+			},
+		}
+	}
+
+	#handleCubeDragStart = (cube: Cube) => {
 		if (!this.#camera) return
 		this.#camera.enabled = false
+		cube.container.alpha = 0.5
 	}
 
 	#handleCubeDragMove = async (cube: Cube, globalPosition: Point) => {
@@ -139,7 +177,7 @@ export default class CubeLayer extends Container {
 
 		const cubeOffsets = calculateCubeOffsets(cube.size)
 		const newPosition = cartesianToIsometric(targetTile.position).subtract(
-			cubeOffsets,
+			cubeOffsets
 		)
 
 		newPosition.z = tallestCubeAtTile
@@ -148,10 +186,10 @@ export default class CubeLayer extends Container {
 
 		cube.placeOnTile(targetTile, newPosition)
 
-		if (this.#avatar.isMoving) await this.#avatar.calculatePath(true)
+		//if (this.#avatar.isMoving) await this.#avatar.moveTo(true)
 
 		this.sortCubesByPosition()
-		this.#avatar.adjustRenderingOrder(this.#cubes)
+		this.adjustRenderingOrder(this.#avatar)
 
 		cube.currentTile?.container.emit('pointerover', mockPointerEvent)
 	}
@@ -159,6 +197,79 @@ export default class CubeLayer extends Container {
 	#handleCubeDragEnd = () => {
 		if (!this.#camera) return
 		this.#camera.enabled = true
+		this.#saveRoomCubes()
+	}
+
+	#handlePlaceCube = async (position: Point3D, size: number) => {
+		if (!this.#tileMap) return
+
+		const validSize = this.#getValidSize(size)
+		const tilePosition = cartesianToIsometric(position)
+		const currentTile = this.#tileMap.findTileByExactPosition(position)
+
+		if (!currentTile) return
+
+		const tallestCubeAtTile = this.findTallestCubeAt(position)
+		const cubeOffsets = calculateCubeOffsets(validSize)
+		const finalPosition = this.#getFinalCubePosition(
+			tilePosition,
+			cubeOffsets,
+			tallestCubeAtTile
+		)
+
+		const cube = new Cube(finalPosition, validSize, currentTile)
+
+		cube.container.on('cube-clicked', this.#handleCubeClick)
+		cube.container.on('cube-drag-start', this.#handleCubeDragStart)
+		cube.container.on('cube-drag-move', this.#handleCubeDragMove)
+		cube.container.on('cube-drag-end', this.#handleCubeDragEnd)
+
+		this.#addCube(cube)
+		this.sortCubesByPosition()
+		if (this.#avatar) this.adjustRenderingOrder(this.#avatar)
+
+		this.#saveRoomCubes()
+	}
+
+	#handleShowBlueprint = (position: Point3D, size: number) => {
+		if (!this.#tileMap) return
+
+		this.#handleHideBlueprint()
+
+		const validSize = this.#getValidSize(size)
+		const tilePosition = cartesianToIsometric(position)
+		const currentTile = this.#tileMap.findTileByExactPosition(position)
+
+		if (!currentTile) return
+
+		const tallestCubeAtTile = this.findTallestCubeAt(position)
+		const cubeOffsets = calculateCubeOffsets(validSize)
+		const finalPosition = this.#getFinalCubePosition(
+			tilePosition,
+			cubeOffsets,
+			tallestCubeAtTile
+		)
+
+		this.#blueprintCube = new Cube(finalPosition, validSize, currentTile)
+		this.#blueprintCube.container.alpha = 0.3
+		this.#blueprintCube.container.eventMode = 'none'
+		this.addChild(this.#blueprintCube.container)
+	}
+
+	#handleHideBlueprint = () => {
+		if (this.#blueprintCube) {
+			this.removeChild(this.#blueprintCube.container)
+			this.#blueprintCube.container.destroy()
+			this.#blueprintCube = undefined
+		}
+	}
+
+	#disableCubes = () => {
+		this.#cubes.forEach(cube => (cube.container.eventMode = 'none'))
+	}
+
+	#enableCubes = () => {
+		this.#cubes.forEach(cube => (cube.container.eventMode = 'dynamic'))
 	}
 
 	#getValidTilePosition = (position: Point3D): Point3D | null =>
@@ -195,7 +306,7 @@ export default class CubeLayer extends Container {
 	#getFinalCubePosition(
 		tilePosition: Point3D,
 		offsets: Point,
-		tallestCubeAtTile: Cube | null,
+		tallestCubeAtTile: Cube | null
 	) {
 		const finalPosition = tilePosition.subtract(offsets)
 
@@ -231,7 +342,49 @@ export default class CubeLayer extends Container {
 		return tilePositionA.x - tilePositionB.x
 	}
 
-	get cubes() {
+	#saveRoomCubes = async () => {
+		const { updateRoom } = await import('@/ui/store/rooms')
+		const cubes = this.#cubes.map(cube => ({
+			position: {
+				x: cube.currentTile!.position.x,
+				y: cube.currentTile!.position.y,
+				z: cube.currentTile!.position.z,
+			},
+			size: cube.size,
+		}))
+		updateRoom({ cubes })
+	}
+
+	adjustRenderingOrder(avatar: Avatar): void {
+		const sortedEntities = [...this.#cubes, avatar]
+
+		sortedEntities.sort((entityA, entityB) => {
+			const posA =
+				entityA instanceof Cube
+					? entityA.currentTile?.position
+					: avatar.currentTile?.position
+			const posB =
+				entityB instanceof Cube
+					? entityB.currentTile?.position
+					: avatar.currentTile?.position
+
+			if (!posA || !posB) return 0
+
+			const isometricPositionA = cartesianToIsometric(posA)
+			const isometricPositionB = cartesianToIsometric(posB)
+
+			return isometricPositionA.y !== isometricPositionB.y
+				? isometricPositionA.y - isometricPositionB.y
+				: isometricPositionA.x - isometricPositionB.x
+		})
+
+		sortedEntities.forEach(
+			(entity, index) => (entity.container.zIndex = index)
+		)
+		this.sortChildren()
+	}
+
+	get cubes(): Cube[] {
 		return this.#cubes
 	}
 }

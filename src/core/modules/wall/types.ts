@@ -1,8 +1,3 @@
-import { PolygonGraphics } from '@/core/utils'
-
-export type FaceKey = 'top' | 'left' | 'right'
-export type BoxFaces = Map<'top' | 'left' | 'right', PolygonGraphics | null>
-
 export type WallDimensions = {
 	height: number
 	thickness: number
@@ -23,4 +18,15 @@ export type WallStyles = {
 export type WallSideStyles = {
 	left: WallStyles
 	right: WallStyles
+}
+
+export type WallSidesCoordinates = {
+	surface: number[]
+	border: number[]
+	borderTop: number[]
+}
+
+export type WallCoordinates = {
+	left: WallSidesCoordinates
+	right: WallSidesCoordinates
 }

@@ -1,4 +1,4 @@
-const convertColorToHex = (color: string) => {
+const convertColorToHex = (color: string): number | undefined => {
 	// Check if the color has either 3 or 6 hexadecimal characters
 	if (!color.startsWith('#') || (color.length !== 7 && color.length !== 4))
 		return

@@ -1,19 +1,20 @@
 import { Point3D } from '@/core/utils/coordinates'
 
-export default class Node {
+export default class PathNode {
 	readonly #position: Point3D
 
 	#gCost: number = 0
+	#hCost: number = 0
 	#fCost: number = 0
 
-	#parent: Node | null = null
+	#parent: PathNode | null = null
 	#height: number = 0
 
 	constructor(position: Point3D) {
 		this.#position = position
 	}
 
-	get position() {
+	get position(): Point3D {
 		return this.#position
 	}
 
@@ -25,6 +26,14 @@ export default class Node {
 		this.#gCost = value
 	}
 
+	get hCost(): number {
+		return this.#hCost
+	}
+
+	set hCost(value: number) {
+		this.#hCost = value
+	}
+
 	get fCost(): number {
 		return this.#fCost
 	}
@@ -33,11 +42,11 @@ export default class Node {
 		this.#fCost = value
 	}
 
-	get parent(): Node | null {
+	get parent(): PathNode | null {
 		return this.#parent
 	}
 
-	set parent(value: Node | null) {
+	set parent(value: PathNode | null) {
 		this.#parent = value
 	}
 

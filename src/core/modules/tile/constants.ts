@@ -1,4 +1,8 @@
-import type { TileDimensions, TileStyles } from './types'
+import type {
+	TileDimensions,
+	TileStyles,
+	TileCoordinates as TileCoordinates,
+} from './types'
 
 export const TILE_DIMENSIONS: TileDimensions = {
 	width: 64,
@@ -24,16 +28,38 @@ export const TILE_STYLES: TileStyles = {
 	},
 }
 
-export const TILE_SURFACE_POINTS: number[] = [
-	TILE_DIMENSIONS.width / 2,
-	0,
-	TILE_DIMENSIONS.width,
-	TILE_DIMENSIONS.height / 2,
-	TILE_DIMENSIONS.width / 2,
-	TILE_DIMENSIONS.height,
-	0,
-	TILE_DIMENSIONS.height / 2,
-]
+export const TILE_COORDINATES: TileCoordinates = {
+	surface: [
+		TILE_DIMENSIONS.width / 2,
+		0,
+		TILE_DIMENSIONS.width,
+		TILE_DIMENSIONS.height / 2,
+		TILE_DIMENSIONS.width / 2,
+		TILE_DIMENSIONS.height,
+		0,
+		TILE_DIMENSIONS.height / 2,
+	],
+	leftBorder: [
+		0,
+		TILE_DIMENSIONS.height / 2,
+		TILE_DIMENSIONS.width / 2,
+		TILE_DIMENSIONS.height,
+		TILE_DIMENSIONS.width / 2,
+		TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
+		0,
+		TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
+	],
+	rightBorder: [
+		TILE_DIMENSIONS.width,
+		TILE_DIMENSIONS.height / 2,
+		TILE_DIMENSIONS.width / 2,
+		TILE_DIMENSIONS.height,
+		TILE_DIMENSIONS.width / 2,
+		TILE_DIMENSIONS.height + TILE_DIMENSIONS.thickness,
+		TILE_DIMENSIONS.width,
+		TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
+	],
+}
 
 export const TILE_GRID: number[][] = [
 	[0, 0, 0, 0, 0, 0, 0],

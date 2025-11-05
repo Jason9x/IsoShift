@@ -23,15 +23,16 @@ export default [
 			react: reactPlugin,
 			'react-hooks': reactHooksPlugin,
 		},
-		settings: {
-			react: {
-				pragma: 'h',
-				version: '18.0',
-			},
-		},
 		rules: {
 			'@typescript-eslint/no-unused-vars': 'warn',
 			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/explicit-module-boundary-types': [
+				'warn',
+				{
+					allowArgumentsExplicitlyTypedAsAny: true,
+					allowHigherOrderFunctions: true,
+				},
+			],
 			curly: ['error', 'multi-or-nest'],
 			'react/react-in-jsx-scope': 'off',
 			'react/jsx-uses-react': 'off',

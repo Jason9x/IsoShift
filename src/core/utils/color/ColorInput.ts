@@ -1,13 +1,13 @@
 export default class ColorInput {
 	static #instance: ColorInput
 
-	static get instance() {
+	static get instance(): ColorInput {
 		return ColorInput.#instance || (ColorInput.#instance = new ColorInput())
 	}
 
 	#inputElement: HTMLInputElement | null = null
 
-	createInputElement() {
+	createInputElement(): void {
 		this.#inputElement?.remove()
 		this.#inputElement = document.createElement('input')
 		this.#inputElement.type = 'color'
@@ -16,6 +16,6 @@ export default class ColorInput {
 
 	addEventListener = (
 		type: string,
-		listener: EventListenerOrEventListenerObject,
-	) => this.#inputElement?.addEventListener(type, listener)
+		listener: EventListenerOrEventListenerObject
+	): void => this.#inputElement?.addEventListener(type, listener)
 }

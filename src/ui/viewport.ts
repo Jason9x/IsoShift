@@ -5,7 +5,7 @@ import { zoom } from './store/zoom'
 
 let viewport: Viewport | null = null
 
-export const setViewport = (instance: Viewport) => {
+export const setViewport = (instance: Viewport): void => {
 	viewport = instance
 	zoom.value = instance.scale.x
 

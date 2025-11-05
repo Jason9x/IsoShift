@@ -1,77 +1,49 @@
 import { Point } from 'pixi.js'
 
 import { Point3D } from '@/core/utils/coordinates'
-import type { ITileMap } from '@/core/modules/tile/interfaces'
+import type { TileMap } from '@/core/modules'
 
-export const isValidTilePosition = (position: Point3D, tileMap: ITileMap) => {
+export const isValidTilePosition = (
+	position: Point3D,
+	tileMap: TileMap
+): boolean => {
 	const { x, y, z } = position
+	const { grid } = tileMap
 
-	const position2D = new Point(x, y)
+	if (x < 0 || y < 0 || x >= grid.length || y >= grid[x]?.length) return false
 
-	if (!isTilePositionInBounds(position, tileMap.grid)) return false
+	const height = tileMap.getGridValue(new Point(x, y))
 
-	const tileHeight = tileMap.getGridValue(position2D)
-
-	return tileHeight !== -1 && tileHeight === z
-}
-
-const isTilePositionInBounds = (position: Point3D, grid: number[][]) => {
-	const { x, y } = position
-
-	const maxGridValues = new Point(
-		grid.length - 1,
-		Math.max(...grid.map(row => row.length)) - 1,
-	)
-
-	return x >= 0 && y >= 0 && x <= maxGridValues.x && y <= maxGridValues.y
+	return height !== -1 && height === z
 }
 
 export const findClosestValidTilePosition = (
 	position: Point3D,
-	grid: number[][],
-) => {
-	return grid.reduce(
-		(
-			closest: {
-				position: Point3D | null
-				distance: number
-			},
-			row: number[],
-			x: number,
-		) =>
-			row.reduce(
-				(
-					innerClosest: {
-						position: Point3D | null
-						distance: number
-					},
-					z: number,
-					y: number,
-				) => {
-					if (z < 0) return innerClosest
+	grid: number[][]
+): Point3D | null => {
+	let closest: Point3D | null = null
+	let minimumDistance = Infinity
 
-					const potentialPosition = new Point3D(x, y, z)
+	for (let x = 0; x < grid.length; x++) {
+		for (let y = 0; y < grid[x].length; y++) {
+			const z = grid[x][y]
 
-					if (potentialPosition.equals(position)) return innerClosest
+			if (z < 0) continue
 
-					const distance = position.distanceTo(potentialPosition)
-					const priority =
-						potentialPosition.x === position.x &&
-						potentialPosition.y === position.y
-							? 0
-							: distance
+			const candidate = new Point3D(x, y, z)
 
-					if (priority < innerClosest.distance) {
-						return {
-							position: potentialPosition,
-							distance: priority,
-						}
-					}
+			if (candidate.equals(position)) continue
 
-					return innerClosest
-				},
-				closest,
-			),
-		{ position: null, distance: Number.POSITIVE_INFINITY },
-	).position
+			const isSameColumn =
+				candidate.x === position.x && candidate.y === position.y
+			const distance = isSameColumn ? 0 : position.distanceTo(candidate)
+
+			if (distance < minimumDistance) {
+				closest = candidate
+				minimumDistance = distance
+			}
+		}
+	}
+
+	return closest
 }

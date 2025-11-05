@@ -1,202 +1,97 @@
 import { Container } from 'pixi.js'
 
-import { WallDirection } from '@/core/modules/wall'
-import { PolygonGraphics, isometricToCartesian, Point3D } from '@/core/utils'
-import type { BoxFaces } from '@/core/modules/wall/types'
+import WallDirection from './WallDirection'
+
 import {
-	WALL_DIMENSIONS,
 	WALL_SIDE_STYLES,
+	WALL_COORDINATES,
 } from '@/core/modules/wall/constants'
-import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
+
+import { Point3D, PolygonGraphics, type BoxFaces } from '@/core/utils'
 
 export default class WallContainer extends Container {
 	readonly #sides: BoxFaces[]
-	readonly #grid: number[][]
 
 	constructor(position: Point3D, direction: WallDirection, grid: number[][]) {
 		super()
 
 		this.position.copyFrom(position)
-		this.#grid = grid
-		this.#sides = this.#createSides(position, direction)
+		this.#sides = [this.#createSide(position, direction, grid)]
 
 		this.#sides.forEach(side =>
-			side.forEach(face => face && this.addChild(face)),
-		)
-	}
-
-	#createSides(position: Point3D, direction: WallDirection) {
-		const sides: BoxFaces[] = []
-		const directions = [WallDirection.Left, WallDirection.Right]
-
-		directions.forEach(_direction =>
-			direction === _direction
-				? sides.push(this.#createSide(position, _direction))
-				: null,
+			side.forEach(face => face && this.addChild(face))
 		)
 
-		return sides
+		this.eventMode = 'static'
+
+		this.on('pointerdown', async event => {
+			if (event.button !== 0) return
+
+			const { selectedCube } = await import('@/ui/store/inventory')
+
+			event.stopPropagation()
+			selectedCube.value = null
+			this.emit('deselect-cube')
+		})
 	}
 
-	#createSide(position: Point3D, direction: WallDirection): BoxFaces {
-		const wallStyles =
-			direction === WallDirection.Left
-				? WALL_SIDE_STYLES.left
-				: WALL_SIDE_STYLES.right
+	#createSide(position: Point3D, direction: WallDirection, grid: number[][]) {
+		const isLeft = direction === WallDirection.Left
+		const styles = isLeft ? WALL_SIDE_STYLES.left : WALL_SIDE_STYLES.right
+		const coordinates = isLeft
+			? WALL_COORDINATES.left
+			: WALL_COORDINATES.right
 
-		const surfacePoints =
-			direction === WallDirection.Left
-				? this.#leftSurfacePoints
-				: this.#rightSurfacePoints
-
-		const borderPoints =
-			direction === WallDirection.Left
-				? this.#leftBorderPoints
-				: this.#rightBorderPoints
-
-		const borderTopPoints =
-			direction === WallDirection.Left
-				? this.#topLeftBorderPoints
-				: this.#topRightBorderPoints
-
-		const cartesianPosition = isometricToCartesian(position)
-
-		const isAtLeftBorder =
-			cartesianPosition.x === 0 &&
-			cartesianPosition.y === this.#grid.length
+		const isAtLeftBorder = position.x === 0 && position.y === grid.length
 		const isAtRightBorder =
-			cartesianPosition.y === 0 &&
-			cartesianPosition.x === this.#grid.length - 1
-		const isAtBorders = isAtLeftBorder || isAtRightBorder
+			position.y === 0 && position.x === grid.length - 1
 
-		return new Map([
+		const faces: BoxFaces = new Map([
 			[
 				'top',
 				new PolygonGraphics(
-					wallStyles.surface.fillColor,
-					surfacePoints,
-					wallStyles.surface.borderColor,
-					wallStyles.surface.borderWidth,
-					{ left: true, right: true },
+					styles.surface.fillColor,
+					coordinates.surface,
+					styles.surface.borderColor,
+					styles.surface.borderWidth,
+					{ left: true, right: true }
 				),
 			],
 			[
 				'left',
 				new PolygonGraphics(
-					wallStyles.border.fillColor,
-					borderPoints,
-					wallStyles.border.borderColor,
-					wallStyles.border.borderWidth,
+					styles.border.fillColor,
+					coordinates.border,
+					styles.border.borderColor,
+					styles.border.borderWidth,
 					{
 						top: true,
 						bottom: true,
-						left: isAtBorders,
+						left: isAtLeftBorder || isAtRightBorder,
 						right: true,
-					},
+					}
 				),
 			],
 			[
 				'right',
 				new PolygonGraphics(
-					wallStyles.borderTop.fillColor,
-					borderTopPoints,
-					wallStyles.borderTop.borderColor,
-					wallStyles.borderTop.borderWidth,
+					styles.borderTop.fillColor,
+					coordinates.borderTop,
+					styles.borderTop.borderColor,
+					styles.borderTop.borderWidth,
 					{
 						top: true,
 						bottom: true,
 						left: isAtLeftBorder,
 						right: isAtRightBorder,
-					},
+					}
 				),
 			],
-		])
-	}
+		]) as BoxFaces
 
-	get #leftSurfacePoints() {
-		return [
-			0,
-			TILE_DIMENSIONS.height / 2,
-			0,
-			-WALL_DIMENSIONS.height,
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
-			TILE_DIMENSIONS.width / 2,
-			0,
-		]
-	}
+		faces.forEach(face => face && (face.eventMode = 'static'))
 
-	get #leftBorderPoints() {
-		return [
-			0,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
-			-WALL_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.height / 2 +
-				TILE_DIMENSIONS.thickness -
-				WALL_DIMENSIONS.thickness / 2,
-			-WALL_DIMENSIONS.thickness,
-			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
-			0,
-			-WALL_DIMENSIONS.height,
-		]
-	}
-
-	get #topLeftBorderPoints() {
-		return [
-			-WALL_DIMENSIONS.thickness,
-			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height -
-				TILE_DIMENSIONS.height / 2 -
-				WALL_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
-			0,
-			-WALL_DIMENSIONS.height,
-		]
-	}
-
-	get #rightSurfacePoints() {
-		return [
-			TILE_DIMENSIONS.width / 2,
-			0,
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
-			TILE_DIMENSIONS.width,
-			-WALL_DIMENSIONS.height,
-			TILE_DIMENSIONS.width,
-			TILE_DIMENSIONS.height / 2,
-		]
-	}
-
-	get #rightBorderPoints() {
-		return [
-			TILE_DIMENSIONS.width,
-			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.height / 2 +
-				TILE_DIMENSIONS.thickness -
-				WALL_DIMENSIONS.thickness / 2,
-			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
-			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
-			TILE_DIMENSIONS.width,
-			-WALL_DIMENSIONS.height,
-		]
-	}
-
-	get #topRightBorderPoints() {
-		return [
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height -
-				TILE_DIMENSIONS.height / 2 -
-				WALL_DIMENSIONS.thickness,
-			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
-			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
-			TILE_DIMENSIONS.width,
-			-WALL_DIMENSIONS.height,
-			TILE_DIMENSIONS.width / 2,
-			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
-		]
+		return faces
 	}
 
 	get sides(): BoxFaces[] {

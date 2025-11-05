@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks'
+import type { JSX } from 'preact/jsx-runtime'
+
 import {
 	Navigator,
 	Settings,
@@ -6,17 +7,13 @@ import {
 	ZoomControls,
 	WidgetBar,
 	Layout,
+	CubeMenu,
 } from './components'
 
-type Widget = 'navigator' | 'settings' | 'inventory' | 'zoom' | 'layout'
+import { useWidgetState } from './hooks'
 
-const HUD = () => {
-	const [openWidget, setOpenWidget] = useState<Widget | null>(null)
-	const toggle = (widget: Widget) =>
-		setOpenWidget(previousWidget =>
-			previousWidget === widget ? null : widget,
-		)
-	const close = () => setOpenWidget(null)
+const HUD = (): JSX.Element => {
+	const { openWidget, toggle, close } = useWidgetState()
 
 	return (
 		<div className="pointer-events-none fixed inset-0 z-50">
@@ -25,7 +22,9 @@ const HUD = () => {
 			<Inventory isOpen={openWidget === 'inventory'} />
 			<ZoomControls isOpen={openWidget === 'zoom'} />
 			<Layout isOpen={openWidget === 'layout'} onClose={close} />
+
 			<WidgetBar onToggle={toggle} />
+			<CubeMenu />
 		</div>
 	)
 }

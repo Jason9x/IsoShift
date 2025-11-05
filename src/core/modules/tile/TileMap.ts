@@ -1,33 +1,41 @@
 import { Container, Point } from 'pixi.js'
 
 import { Wall, Tile, WallMap, Avatar } from '@/core/modules'
-import type { FaceKey } from '@/core/modules/tile/types'
-import { Point3D } from '@/core/utils/coordinates'
-import { calculateWallDirections } from '@/core/utils/calculations'
-import { Pathfinder } from '@/core/engine/pathfinding'
+import { calculateWallDirections, type FaceKey, Point3D } from '@/core/utils'
+
+import { selectedCube } from '@/ui/store/inventory'
 
 export default class TileMap extends Container {
 	readonly #grid: number[][]
 	readonly #tiles: Tile[]
+
 	#avatar?: Avatar
-	#pathfinder?: Pathfinder
 
 	constructor(grid: number[][]) {
 		super()
+
 		this.#grid = grid
 		this.#tiles = []
 	}
 
-	initialize(wallMap: WallMap, avatar: Avatar, pathfinder: Pathfinder) {
-		this.#avatar = avatar
-		this.#pathfinder = pathfinder
+	initialize(wallMap: WallMap, avatar: Avatar): void {
 		this.#generate(wallMap)
+		this.#avatar = avatar
+
+		wallMap.on('deselect-cube', () => {
+			this.emit('hide-blueprint')
+			this.emit('enable-cubes')
+		})
 	}
 
-	#generate(wallMap: WallMap) {
-		this.#grid.forEach((row, x) =>
-			row.forEach((z, y) => {
-				if (z === -1) return
+	#generate = (wallMap: WallMap) => {
+		for (let x = 0; x < this.#grid.length; x++) {
+			const row = this.#grid[x]
+
+			for (let y = 0; y < row.length; y++) {
+				const z = row[y]
+
+				if (z === -1) continue
 
 				const position = new Point3D(x, y, z)
 				const tile = new Tile(position, this.#grid)
@@ -35,56 +43,58 @@ export default class TileMap extends Container {
 				this.#tiles.push(tile)
 				this.addChild(tile.container)
 
-				tile.container.on('tile-clicked', this.#handleTileClick)
-				tile.container.on(
-					'tile-face-right-clicked',
-					this.#handleTileFaceRightClick,
-				)
+				tile.setupEventHandlers({
+					onTileClick: this.#handleTileClick,
+					onTileHover: this.#handleTileHover,
+					onTileHoverEnd: this.#handleTileHoverEnd,
+					onTileFaceRightClick: this.#handleTileFaceRightClick,
+				})
 
 				const wallDirections = calculateWallDirections(x, y)
 
-				wallDirections.forEach(direction => {
+				for (let i = 0; i < wallDirections.length; i++) {
+					const direction = wallDirections[i]
 					const wall = new Wall(position, direction, this.#grid)
-
 					wallMap.addWall(wall)
-				})
-			}),
-		)
+				}
+			}
+		}
 	}
 
-	#handleTileClick = async (position: Point3D) => {
-		if (!this.#avatar || !this.#pathfinder) return
+	#handleTileClick = async (position: Point3D) =>
+		selectedCube.value
+			? this.emit('place-cube', position, selectedCube.value.size)
+			: this.#avatar?.moveTo(position)
 
-		this.#avatar.goalPosition = position.clone()
-
-		void this.#avatar.calculatePath()
+	#handleTileHover = (position: Point3D) => {
+		this.emit('show-blueprint', position, selectedCube.value?.size)
+		this.emit('disable-cubes')
 	}
 
-	#handleTileFaceRightClick = (
-		position: Point3D,
-		key: FaceKey,
-		hexColor: string,
-	) => {
-		const numericColor = parseInt(hexColor.replace('#', ''), 16)
-		this.#tiles.forEach(tile =>
-			tile.container?.faces.get(key)?.initialize(numericColor),
-		)
+	#handleTileHoverEnd = () => {
+		this.emit('hide-blueprint')
+		this.emit('enable-cubes')
 	}
 
-	getGridValue = (position: Point) =>
+	#handleTileFaceRightClick = (key: FaceKey, hexColor: number) => {
+		const numericColor = parseInt(hexColor.toString().replace('#', ''), 16)
+
+		for (let i = 0; i < this.#tiles.length; i++) {
+			const tile = this.#tiles[i]
+			tile.container?.faces.get(key)?.draw(numericColor)
+		}
+	}
+
+	getGridValue = (position: Point): number =>
 		this.#grid[position.x]?.[position.y] ?? -1
 
-	findTileByExactPosition = (position: Point3D) =>
+	findTileByExactPosition = (position: Point3D): Tile | undefined =>
 		this.#tiles.find(tile => tile.position.equals(position))
 
-	findTileByPositionInBounds = (position: Point) =>
+	findTileByPositionInBounds = (position: Point): Tile | undefined =>
 		this.#tiles.find(tile => tile.isPositionWithinBounds(position))
 
-	get tiles() {
-		return this.#tiles
-	}
-
-	get grid() {
+	get grid(): number[][] {
 		return this.#grid
 	}
 }

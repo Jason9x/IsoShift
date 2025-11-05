@@ -1,7 +1,19 @@
 import { FederatedPointerEvent, Point } from 'pixi.js'
+import type { Viewport } from 'pixi-viewport'
 
-import { Tile, CubeContainer } from '@/core/modules'
-import { PolygonGraphics, Point3D, createColorInput } from '@/core/utils'
+import { Tile, TileMap, CubeContainer } from '@/core/modules'
+import {
+	PolygonGraphics,
+	Point3D,
+	createColorInput,
+	cartesianToIsometric,
+	isometricToCartesian,
+	isValidTilePosition,
+	findClosestValidTilePosition,
+	calculateCubeOffsets,
+} from '@/core/utils'
+
+import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 
 export default class Cube {
 	readonly #position: Point3D
@@ -9,21 +21,100 @@ export default class Cube {
 	readonly #container: CubeContainer
 
 	#currentTile: Tile | undefined
-	#isDragging: boolean = false
+	#isDragging = false
+	#dragEnabled = false
 
 	constructor(position: Point3D, size: number, currentTile: Tile) {
 		this.#position = position
 		this.#size = size
 		this.#currentTile = currentTile
 
-		this.#container = new CubeContainer(this.#position, this.#size)
+		const isometricPosition = cartesianToIsometric(position)
 
+		this.#container = new CubeContainer(isometricPosition, size)
 		this.#setupEventListeners()
+	}
+
+	static create(
+		position: Point3D,
+		size: number,
+		tileMap: TileMap,
+		cubes: Cube[],
+		isBlueprint = false
+	): Cube | null {
+		const s = Math.max(8, Math.min(size, TILE_DIMENSIONS.height))
+		const validPosition = isValidTilePosition(position, tileMap)
+			? position
+			: findClosestValidTilePosition(position, tileMap.grid)
+		if (!validPosition) return null
+
+		const tile = tileMap.findTileByExactPosition(validPosition)
+		if (!tile) return null
+
+		const tallest = cubes.reduce(
+			(t: Cube | null, c) =>
+				c.currentTile?.position.equals(validPosition) &&
+				c.position.z > (t?.position.z ?? -Infinity)
+					? c
+					: t,
+			null
+		)
+		if (!isBlueprint && tallest && tallest.size >= s) return null
+
+		const isometricPosition = cartesianToIsometric(validPosition).subtract(
+			calculateCubeOffsets(s)
+		)
+		isometricPosition.z = tallest
+			? tallest.position.z + tallest.size
+			: isometricPosition.z
+		const cartPosition = isometricToCartesian(isometricPosition)
+
+		return new Cube(cartPosition, s, tile)
+	}
+
+	setupInteractions(
+		viewport: Viewport,
+		onSave: () => void,
+		onSort: () => void,
+		cubes: Cube[]
+	): void {
+		this.#container.on(
+			'cube-clicked',
+			async (cube: Cube, globalPosition: Point) => {
+				const { cubeMenuState } = await import('@/ui/store/cubeMenu')
+				cubeMenuState.value = {
+					x: globalPosition.x,
+					y: globalPosition.y,
+					onRotate: () => console.log('Rotate'),
+					onMove: () => (
+						(viewport.pause = true),
+						(cube.container.alpha = 0.5),
+						cube.enableDrag()
+					),
+					onDelete: () => {
+						const i = cubes.indexOf(cube)
+						if (i > -1)
+							(cubes.splice(i, 1),
+								cube.container.destroy(),
+								onSort(),
+								onSave())
+					},
+				}
+			}
+		)
+		this.#container.on(
+			'cube-drag-start',
+			() => ((viewport.pause = true), (this.#container.alpha = 0.5))
+		)
+		this.#container.on(
+			'cube-drag-end',
+			() => ((viewport.pause = false), onSave())
+		)
 	}
 
 	#setupEventListeners() {
 		this.#container.faces.forEach(face =>
-			face?.on('rightdown', this.#handleFaceClick.bind(this, face)),
+			face?.on('rightdown', this.#handleFaceClick.bind(this, face))
 		)
 
 		this.#container
@@ -36,42 +127,47 @@ export default class Cube {
 	}
 
 	#handleFaceClick = (face: PolygonGraphics) =>
-		createColorInput(hexColor => face.initialize(hexColor))
+		createColorInput(hexColor => face.draw(hexColor))
 
-	#handlePointerDown(event: FederatedPointerEvent) {
+	async #handlePointerDown(event: FederatedPointerEvent) {
 		if (event.button !== 0) return
 
-		this.#container.alpha = 0.5
-		this.#isDragging = true
+		const { selectedCube } = await import('@/ui/store/inventory')
+		if (selectedCube.value) return
 
-		this.#container.emit('cube-drag-start', this)
+		if (this.#dragEnabled) {
+			this.#isDragging = true
+			this.#container.emit('cube-drag-start', this)
+		} else {
+			this.#container.emit('cube-clicked', this, event.global)
+		}
 	}
 
 	#handlePointerOver = (event: FederatedPointerEvent) =>
 		this.#currentTile?.container?.emit(
 			'pointerover',
-			this.#createSyntheticPointerEvent(event.global, 'pointerover'),
+			this.#createSyntheticPointerEvent(event.global, 'pointerover')
 		)
 
 	#handlePointerOut = (event: FederatedPointerEvent) =>
 		this.#currentTile?.container?.emit(
 			'pointerout',
-			this.#createSyntheticPointerEvent(event.global, 'pointerout'),
+			this.#createSyntheticPointerEvent(event.global, 'pointerout')
 		)
 
 	#handleDragMove(event: FederatedPointerEvent) {
 		if (!this.#isDragging) return
-
 		this.#container.emit('cube-drag-move', this, event.global)
 	}
+
 	#handleDragEnd() {
 		this.#container.alpha = 1
 		this.#isDragging = false
-
+		this.#dragEnabled = false
 		this.#container.emit('cube-drag-end', this)
 	}
 
-	placeOnTile(tile: Tile, newPosition: Point3D) {
+	placeOnTile(tile: Tile, newPosition: Point3D): void {
 		this.#updatePosition(newPosition)
 		this.#currentTile = tile
 	}
@@ -79,7 +175,11 @@ export default class Cube {
 	#updatePosition(position: Point3D) {
 		this.#position.copyFrom(position)
 
-		this.#container.position.set(position.x, position.y - position.z)
+		const isometricPosition = cartesianToIsometric(position)
+		this.#container.position.set(
+			isometricPosition.x,
+			isometricPosition.y - isometricPosition.z
+		)
 	}
 
 	/**
@@ -92,7 +192,7 @@ export default class Cube {
 	 */
 	#createSyntheticPointerEvent = (
 		position: Point,
-		type: string,
+		type: string
 	): FederatedPointerEvent => {
 		return {
 			// PointerEvent properties
@@ -192,19 +292,19 @@ export default class Cube {
 		} as unknown as FederatedPointerEvent // Cast to unknown first, then to FederatedPointerEvent
 	}
 
-	get position() {
+	get position(): Point3D {
 		return this.#position
 	}
-
-	get size() {
+	get size(): number {
 		return this.#size
 	}
-
-	get container() {
+	get container(): CubeContainer {
 		return this.#container
 	}
-
-	get currentTile() {
+	get currentTile(): Tile | undefined {
 		return this.#currentTile
+	}
+	enableDrag(): void {
+		this.#dragEnabled = true
 	}
 }

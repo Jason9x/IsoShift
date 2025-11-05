@@ -1,8 +1,85 @@
-import type { WallDimensions, WallSideStyles } from './types'
+import type { WallDimensions, WallSideStyles, WallCoordinates } from './types'
+
+import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 
 export const WALL_DIMENSIONS: WallDimensions = {
 	height: 100,
 	thickness: 6,
+}
+
+export const WALL_COORDINATES: WallCoordinates = {
+	left: {
+		surface: [
+			0,
+			TILE_DIMENSIONS.height / 2,
+			0,
+			-WALL_DIMENSIONS.height,
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
+			TILE_DIMENSIONS.width / 2,
+			0,
+		],
+		border: [
+			0,
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
+			-WALL_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.height / 2 +
+				TILE_DIMENSIONS.thickness -
+				WALL_DIMENSIONS.thickness / 2,
+			-WALL_DIMENSIONS.thickness,
+			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
+			0,
+			-WALL_DIMENSIONS.height,
+		],
+		borderTop: [
+			-WALL_DIMENSIONS.thickness,
+			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height -
+				TILE_DIMENSIONS.height / 2 -
+				WALL_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
+			0,
+			-WALL_DIMENSIONS.height,
+		],
+	},
+	right: {
+		surface: [
+			TILE_DIMENSIONS.width / 2,
+			0,
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
+			TILE_DIMENSIONS.width,
+			-WALL_DIMENSIONS.height,
+			TILE_DIMENSIONS.width,
+			TILE_DIMENSIONS.height / 2,
+		],
+		border: [
+			TILE_DIMENSIONS.width,
+			TILE_DIMENSIONS.height / 2 + TILE_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.height / 2 +
+				TILE_DIMENSIONS.thickness -
+				WALL_DIMENSIONS.thickness / 2,
+			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
+			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
+			TILE_DIMENSIONS.width,
+			-WALL_DIMENSIONS.height,
+		],
+		borderTop: [
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height -
+				TILE_DIMENSIONS.height / 2 -
+				WALL_DIMENSIONS.thickness,
+			TILE_DIMENSIONS.width + WALL_DIMENSIONS.thickness,
+			-WALL_DIMENSIONS.height - WALL_DIMENSIONS.thickness / 2,
+			TILE_DIMENSIONS.width,
+			-WALL_DIMENSIONS.height,
+			TILE_DIMENSIONS.width / 2,
+			-WALL_DIMENSIONS.height - TILE_DIMENSIONS.height / 2,
+		],
+	},
 }
 
 export const WALL_SIDE_STYLES: WallSideStyles = {

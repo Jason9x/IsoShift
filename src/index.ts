@@ -1,11 +1,14 @@
 import './index.css'
 
+import './index.css'
+
 import { Application } from 'pixi.js'
 
-import ClientFactory from './core/ClientFactory'
+import { Client } from './core/engine/game'
 import { initializeUI } from './ui'
+
+initializeUI()
 
 const application = new Application()
 
-initializeUI()
-ClientFactory.create(application)
+new Client(application)

@@ -1,93 +1,95 @@
 import { FederatedPointerEvent, Point, Polygon } from 'pixi.js'
 
+import { TILE_COORDINATES } from './constants'
+
+import { TileContainer } from '@/core/modules/tile'
+
 import {
 	Point3D,
-	cartesianToIsometric,
-	isometricToCartesian,
 	createColorInput,
+	isometricToCartesian,
+	type FaceKey,
+	cartesianToIsometric,
 } from '@/core/utils'
-import { TILE_SURFACE_POINTS } from '@/core/modules/tile/constants'
-import { TileContainer } from '@/core/modules'
-import type { FaceKey } from '@/core/modules/tile/types'
+
+type EventHandlers = {
+	onTileClick: (position: Point3D) => void
+	onTileHover: (position: Point3D) => void
+	onTileHoverEnd: () => void
+	onTileFaceRightClick: (key: FaceKey, hexColor: number) => void
+}
 
 export default class Tile {
 	readonly #position: Point3D
-	readonly #container: TileContainer
-
 	readonly #grid: number[][]
+	readonly #container: TileContainer
 
 	constructor(position: Point3D, grid: number[][]) {
 		this.#position = position
 		this.#grid = grid
-		this.#container = new TileContainer(
-			cartesianToIsometric(this.#position),
-			this.#getBorders(),
-		)
 
-		this.#setupEventListeners()
+		const hasBorders = [
+			this.#isTileEmpty(new Point(0, 1)),
+			this.#isTileEmpty(new Point(1, 0)),
+		]
+
+		const isometricPosition = cartesianToIsometric(position)
+
+		this.#container = new TileContainer(isometricPosition, hasBorders)
 	}
 
-	isPositionWithinBounds(position: Point) {
+	setupEventHandlers(handlers: EventHandlers): void {
+		this.#container.faces.forEach((face, key) =>
+			face?.on('rightclick', () =>
+				createColorInput(hexColor =>
+					handlers.onTileFaceRightClick(key, hexColor)
+				)
+			)
+		)
+
+		this.#container
+			.on('pointerover', () =>
+				this.#handlePointerOver(handlers.onTileHover)
+			)
+			.on(
+				'pointerdown',
+				(event: FederatedPointerEvent) =>
+					event.button === 0 && handlers.onTileClick(this.#position)
+			)
+			.on('pointerout', () =>
+				this.#handlePointerOut(handlers.onTileHoverEnd)
+			)
+	}
+
+	isPositionWithinBounds(position: Point): boolean {
 		const { x, y, z } = cartesianToIsometric(this.#position)
 
-		const transformedPoints = TILE_SURFACE_POINTS.map(
-			(point, index) => point + (index % 2 === 0 ? x : y - z),
+		const transformedPoints = TILE_COORDINATES.surface.map(
+			(point, index) => point + (index % 2 === 0 ? x : y - z)
 		)
+
 		const polygon = new Polygon(transformedPoints)
 
 		return polygon.contains(position.x, position.y)
 	}
 
-	#setupEventListeners() {
-		this.#container.faces.forEach((face, key) =>
-			face?.on('rightclick', this.#handleFaceClick.bind(this, key)),
-		)
-
-		this.#container
-			.on('pointerover', this.#handlePointerOver) // Bind removed as it's now an arrow function property
-			.on('pointerdown', this.#handlePointerDown) // Bind removed as it's now an arrow function property
-			.on('pointerout', this.#handlePointerOut) // Bind removed as it's now an arrow function property
-	}
-
-	#getBorders = (): [boolean, boolean] => [
-		this.#isTileEmpty(new Point(0, 1)),
-		this.#isTileEmpty(new Point(1, 0)),
-	]
-
 	#isTileEmpty(delta: Point) {
 		const { x, y, z } = isometricToCartesian(this.#position)
-
 		const nextRow = this.#grid[x + delta.x]
-		if (!nextRow) return true
 
-		const tileZ = nextRow[y + delta.y]
-
-		return !tileZ || tileZ !== z
+		return !nextRow || nextRow[y + delta.y] !== z
 	}
 
-	#handleFaceClick = (key: FaceKey) => {
-		createColorInput(hexColor => {
-			this.#container.emit(
-				'tile-face-right-clicked',
-				this.#position.clone(),
-				key,
-				hexColor,
-			)
-		})
-	}
-
-	#handlePointerOver = () => {
+	#handlePointerOver = (onTileHover: (position: Point3D) => void) => {
 		this.#container.createHoverEffect()
+
+		onTileHover(this.#position)
 	}
 
-	#handlePointerDown = (event: FederatedPointerEvent) => {
-		if (event.button !== 0) return
-
-		this.#container.emit('tile-clicked', this.#position.clone())
-	}
-
-	#handlePointerOut = () => {
+	#handlePointerOut = (onTileHoverEnd: () => void) => {
 		this.#container.destroyHoverEffect()
+
+		onTileHoverEnd()
 	}
 
 	get container(): TileContainer {

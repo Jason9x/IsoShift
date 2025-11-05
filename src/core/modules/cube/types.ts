@@ -1,6 +1,4 @@
-import { PolygonGraphics, Point3D } from '@/core/utils'
-
-export type BoxFaces = Map<'top' | 'left' | 'right', PolygonGraphics | null>
+import { Point3D } from '@/core/utils'
 
 export type CubeSettings = {
 	position: Point3D

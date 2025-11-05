@@ -1,9 +1,15 @@
-import { signal, effect } from '@preact/signals'
-import { loadFromStorage } from './storage'
+import { signal } from '@preact/signals'
 
-export const inventory = signal<string[]>(loadFromStorage('inventory', []))
+type CubeType = {
+	name: string
+	size: number
+}
 
-effect(() => localStorage.setItem('inventory', JSON.stringify(inventory.value)))
+export const CUBE_TYPES: CubeType[] = [
+	{ name: 'Tiny Cube', size: 8 },
+	{ name: 'Small Cube', size: 16 },
+	{ name: 'Medium Cube', size: 24 },
+	{ name: 'Large Cube', size: 32 },
+]
 
-export const addToInventory = (item: string) =>
-	(inventory.value = [...inventory.value, item])
+export const selectedCube = signal<CubeType | null>(null)
