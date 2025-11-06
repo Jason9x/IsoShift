@@ -7,9 +7,19 @@ import { TileMap, WallMap, CubeLayer, Avatar } from '@/core/modules'
 
 import { currentRoom, type CubeData } from '@/ui/store/rooms'
 
+type RoomConfig = {
+	grid: number[][]
+	cubes: CubeData[]
+	tileThickness: number
+	wallHeight: number
+	wallThickness: number
+	wallsVisible: boolean
+}
+
 export default class SceneManager {
 	#avatar?: Avatar
 	#layers?: Container[]
+	#wallMap?: WallMap
 
 	watchRoomChanges(camera: Camera): this {
 		let previousGrid: number[][] | null = null
@@ -21,6 +31,7 @@ export default class SceneManager {
 
 			this.#layers = undefined
 			this.#avatar = undefined
+			this.#wallMap = undefined
 		}
 
 		effect(() => {
@@ -31,45 +42,79 @@ export default class SceneManager {
 				return
 			}
 
+			const config: RoomConfig = {
+				grid: room.grid,
+				cubes: room.cubes,
+				tileThickness: room.tileThickness,
+				wallHeight: room.wallHeight,
+				wallThickness: room.wallThickness,
+				wallsVisible: room.wallsVisible
+			}
+
 			if (!this.#layers) {
 				previousGrid = room.grid
-				this.#updateScene(camera, room.grid, room.cubes)
+				this.#updateScene(camera, config)
 				return
 			}
+
+			if (this.#wallMap) this.#wallMap.visible = config.wallsVisible
 
 			if (previousGrid && previousGrid === room.grid) return
 
 			previousGrid = room.grid
-			this.#regenerateScene(camera, room.grid, room.cubes)
+
+			this.#regenerateScene(camera, config)
 		})
 
 		return this
 	}
 
-	#initializeScene(camera: Camera, grid: number[][], cubes: CubeData[]) {
-		const wallMap = new WallMap()
+	#initializeScene(camera: Camera, config: RoomConfig) {
+		const {
+			grid,
+			cubes,
+			tileThickness,
+			wallHeight,
+			wallThickness,
+			wallsVisible
+		} = config
+
+		const wallMap = new WallMap(wallHeight, wallThickness, wallsVisible)
 		const tileMap = new TileMap(grid)
 		const cubeLayer = new CubeLayer(cubes)
 		const avatar = new Avatar()
 
-		tileMap.initialize(wallMap, avatar)
+		wallMap.generateFromGrid(grid)
+
+		wallMap.on('deselect-cube', () => {
+			tileMap.emit('hide-blueprint')
+			tileMap.emit('enable-cubes')
+		})
+
+		tileMap.initialize(avatar, tileThickness)
 		cubeLayer.initialize(tileMap, camera, avatar)
 		avatar.initialize(tileMap, cubeLayer)
 
-		return { avatar, layers: [wallMap, tileMap, cubeLayer] }
+		return { avatar, wallMap, layers: [wallMap, tileMap, cubeLayer] }
 	}
 
-	#regenerateScene(camera: Camera, grid: number[][], cubes: CubeData[]) {
+	#regenerateScene(camera: Camera, config: RoomConfig) {
 		this.#layers?.forEach(layer => camera.viewport?.removeChild(layer))
 
-		this.#updateScene(camera, grid, cubes)
+		this.#updateScene(camera, config)
 	}
 
-	#updateScene(camera: Camera, grid: number[][], cubes: CubeData[]) {
-		const { avatar, layers } = this.#initializeScene(camera, grid, cubes)
+	#updateScene(camera: Camera, config: RoomConfig) {
+		const { avatar, wallMap, layers } = this.#initializeScene(
+			camera,
+			config
+		)
+
 
 		this.#avatar = avatar
+		this.#wallMap = wallMap
 		this.#layers = layers
+
 
 		camera.viewport?.addChild(...layers)
 	}

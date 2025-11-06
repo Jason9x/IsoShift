@@ -5,12 +5,12 @@ import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 export const AVATAR_COLORS = {
 	TOP_FACE: 0x9932cc, // DarkOrchid
 	LEFT_FACE: 0x32cd32, // LimeGreen
-	RIGHT_FACE: 0x00bfff, // DeepSkyBlue
+	RIGHT_FACE: 0x00bfff // DeepSkyBlue
 }
 
 export const AVATAR_DIMENSIONS = {
 	WIDTH: 20,
-	HEIGHT: 60,
+	HEIGHT: 60
 }
 
 export const AVATAR_OFFSETS: Point = new Point(

@@ -29,7 +29,7 @@ export class AvatarMovementController {
 			start,
 			goal,
 			tileMap,
-			cubeLayer,
+			cubeLayer
 		})
 
 		if (!path || path.length === 0) return

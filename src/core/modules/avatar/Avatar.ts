@@ -7,7 +7,7 @@ import {
 	cartesianToIsometric,
 	findClosestValidTilePosition,
 	createColorInput,
-	calculateInitialAvatarPosition,
+	calculateInitialAvatarPosition
 } from '@/core/utils'
 
 import { AVATAR_OFFSETS } from '@/core/modules/avatar/constants'

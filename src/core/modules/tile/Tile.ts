@@ -1,7 +1,5 @@
 import { FederatedPointerEvent, Point, Polygon } from 'pixi.js'
 
-import { TILE_COORDINATES } from './constants'
-
 import { TileContainer } from '@/core/modules/tile'
 
 import {
@@ -9,7 +7,7 @@ import {
 	createColorInput,
 	isometricToCartesian,
 	type FaceKey,
-	cartesianToIsometric,
+	cartesianToIsometric
 } from '@/core/utils'
 
 type EventHandlers = {
@@ -24,18 +22,22 @@ export default class Tile {
 	readonly #grid: number[][]
 	readonly #container: TileContainer
 
-	constructor(position: Point3D, grid: number[][]) {
+	constructor(position: Point3D, grid: number[][], tileThickness: number) {
 		this.#position = position
 		this.#grid = grid
 
 		const hasBorders = [
 			this.#isTileEmpty(new Point(0, 1)),
-			this.#isTileEmpty(new Point(1, 0)),
+			this.#isTileEmpty(new Point(1, 0))
 		]
 
 		const isometricPosition = cartesianToIsometric(position)
 
-		this.#container = new TileContainer(isometricPosition, hasBorders)
+		this.#container = new TileContainer(
+			isometricPosition,
+			hasBorders,
+			tileThickness
+		)
 	}
 
 	setupEventHandlers(handlers: EventHandlers): void {
@@ -59,12 +61,15 @@ export default class Tile {
 			.on('pointerout', () =>
 				this.#handlePointerOut(handlers.onTileHoverEnd)
 			)
+			.on('pointerleave', () =>
+				this.#handlePointerOut(handlers.onTileHoverEnd)
+			)
 	}
 
 	isPositionWithinBounds(position: Point): boolean {
 		const { x, y, z } = cartesianToIsometric(this.#position)
 
-		const transformedPoints = TILE_COORDINATES.surface.map(
+		const transformedPoints = this.#container.surfaceCoordinates.map(
 			(point, index) => point + (index % 2 === 0 ? x : y - z)
 		)
 

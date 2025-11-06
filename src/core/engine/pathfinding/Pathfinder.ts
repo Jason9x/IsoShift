@@ -12,7 +12,7 @@ import {
 	isObstacle,
 	isPathObstructed,
 	reconstructPath,
-	updateNodeHeight,
+	updateNodeHeight
 } from './PathfindingHelpers'
 
 type PathfindingContext = {
@@ -30,7 +30,7 @@ export default class Pathfinder {
 		start,
 		goal,
 		tileMap,
-		cubeLayer,
+		cubeLayer
 	}: {
 		start?: Point3D
 		goal: Point3D
@@ -48,7 +48,7 @@ export default class Pathfinder {
 
 		const [openList, closedList] = [
 			new Heap<PathNode>((a, b) => a.fCost - b.fCost),
-			new Set<PathNode>(),
+			new Set<PathNode>()
 		]
 
 		const startNode = new PathNode(start)
@@ -93,7 +93,7 @@ export default class Pathfinder {
 					neighborNode: neighborPathNode,
 					currentNode: currentNode,
 					openList,
-					goal,
+					goal
 				})
 			)
 		}
@@ -106,7 +106,7 @@ export default class Pathfinder {
 		neighborNode,
 		currentNode,
 		openList,
-		goal,
+		goal
 	}: {
 		context: RequiredPathfindingContext
 		neighborNode: PathNode

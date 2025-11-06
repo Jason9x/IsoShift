@@ -48,7 +48,7 @@ export const getNeighborPositions = (
 		[-1, -1],
 		[1, 1],
 		[-1, 1],
-		[1, -1],
+		[1, -1]
 	]
 
 	return offsets

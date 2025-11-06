@@ -1,5 +1,5 @@
-export { default as Navigator } from './Navigator'
-export { default as Settings } from './Settings'
+export * from './navigator'
 export { default as Inventory } from './Inventory'
-export { default as ZoomControls } from './ZoomControls'
 export { default as Layout } from './Layout'
+export { default as Settings } from './Settings'
+export { default as ZoomControls } from './ZoomControls'

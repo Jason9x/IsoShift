@@ -10,7 +10,7 @@ export default class Camera {
 		this.#viewport = new Viewport({
 			screenWidth: application.screen.width,
 			screenHeight: application.screen.height,
-			events: application.renderer.events,
+			events: application.renderer.events
 		})
 
 		this.#viewport
@@ -18,6 +18,17 @@ export default class Camera {
 			.pinch()
 			.wheel()
 			.clampZoom({ minScale: MININUM_ZOOM, maxScale: MAX_ZOOM })
+
+		this.#setupEventListeners()
+	}
+
+	#setupEventListeners() {
+		this.#viewport.on('pointerdown', async event => {
+			const { selectedCube } = await import('@/ui/store/inventory')
+
+			if (selectedCube.value && event.target === this.#viewport)
+				selectedCube.value = null
+		})
 	}
 
 	get viewport(): Viewport {

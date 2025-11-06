@@ -10,24 +10,24 @@ export const borderPresets = {
 		top: !isAtFirstRow,
 		bottom: false,
 		left: !isAtFirstColumn && hasLeftBorder,
-		right: hasRightBorder,
+		right: hasRightBorder
 	}),
 
 	tileBorder: (): Sides => ({
 		top: true,
-		bottom: true,
+		bottom: true
 	}),
 
 	wallSurface: (): Sides => ({
 		left: true,
-		right: true,
+		right: true
 	}),
 
 	wallBorder: (isAtLeftBorder: boolean, isAtRightBorder: boolean): Sides => ({
 		top: true,
 		bottom: true,
 		left: isAtLeftBorder || isAtRightBorder,
-		right: true,
+		right: true
 	}),
 
 	wallBorderTop: (
@@ -37,6 +37,6 @@ export const borderPresets = {
 		top: true,
 		bottom: true,
 		left: isAtLeftBorder,
-		right: isAtRightBorder,
-	}),
+		right: isAtRightBorder
+	})
 }

@@ -1,4 +1,5 @@
 import type { Application } from 'pixi.js'
+import type { Viewport } from 'pixi-viewport'
 
 import SceneManager from './SceneManager'
 import Camera from './Camera'
@@ -26,7 +27,7 @@ export default class Client {
 			width: window.innerWidth,
 			height: window.innerHeight,
 			background: 0x000000,
-			resolution: 1,
+			resolution: 1
 		})
 
 		document.body.appendChild(this.#application.canvas)
@@ -49,21 +50,20 @@ export default class Client {
 		return camera
 	}
 
-	#setupEventListeners(viewport: Camera['viewport']) {
-		window.addEventListener('resize', () =>
-			this.#application.renderer.resize(
-				window.innerWidth,
-				window.innerHeight
+	#setupEventListeners(viewport: Viewport) {
+		window.addEventListener('resize', () => {
+			const width = window.innerWidth
+			const height = window.innerHeight
+
+			this.#application.renderer.resize(width, height)
+
+			viewport.resize(width, height)
+			viewport.position.set(
+				this.#application.screen.width / 2,
+				this.#application.screen.height / 2
 			)
-		)
+		})
 
 		window.addEventListener('contextmenu', event => event.preventDefault())
-
-		viewport.on('pointerdown', async event => {
-			const { selectedCube } = await import('@/ui/store/inventory')
-
-			if (selectedCube.value && event.target === viewport)
-				selectedCube.value = null
-		})
 	}
 }

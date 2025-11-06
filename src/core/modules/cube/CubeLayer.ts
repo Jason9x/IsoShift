@@ -7,7 +7,7 @@ import { Camera } from '@/core/engine/game'
 import { Point3D, cartesianToIsometric } from '@/core/utils/coordinates'
 import {
 	findClosestValidTilePosition,
-	isValidTilePosition,
+	isValidTilePosition
 } from '@/core/utils/helpers'
 import { calculateCubeOffsets } from '@/core/utils/calculations'
 import type { CubeData } from '@/ui/store/rooms'
@@ -129,7 +129,7 @@ export default class CubeLayer extends Container {
 					if (this.#avatar) this.adjustRenderingOrder(this.#avatar)
 					this.#saveRoomCubes()
 				}
-			},
+			}
 		}
 	}
 
@@ -151,7 +151,7 @@ export default class CubeLayer extends Container {
 			button: 0,
 			buttons: 0,
 			clientX: globalPosition.x,
-			clientY: globalPosition.y,
+			clientY: globalPosition.y
 		} as FederatedPointerEvent
 
 		cube.currentTile?.container.emit('pointerout', mockPointerEvent)
@@ -348,9 +348,9 @@ export default class CubeLayer extends Container {
 			position: {
 				x: cube.currentTile!.position.x,
 				y: cube.currentTile!.position.y,
-				z: cube.currentTile!.position.z,
+				z: cube.currentTile!.position.z
 			},
-			size: cube.size,
+			size: cube.size
 		}))
 		updateRoom({ cubes })
 	}

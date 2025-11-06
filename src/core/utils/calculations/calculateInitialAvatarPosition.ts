@@ -1,11 +1,11 @@
 import { Point3D, cartesianToIsometric } from '@/core/utils/coordinates'
 import {
 	findClosestValidTilePosition,
-	isValidTilePosition,
+	isValidTilePosition
 } from '@/core/utils/helpers'
 import {
 	AVATAR_INITIAL_POSITION,
-	AVATAR_OFFSETS,
+	AVATAR_OFFSETS
 } from '@/core/modules/avatar/constants'
 import { TileMap } from '@/core/modules'
 

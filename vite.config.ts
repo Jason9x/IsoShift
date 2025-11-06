@@ -6,22 +6,22 @@ import preact from '@preact/preset-vite'
 export default defineConfig({
 	resolve: {
 		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url)),
-		},
+			'@': fileURLToPath(new URL('./src', import.meta.url))
+		}
 	},
 	plugins: [preact(), tsconfigPaths()],
 	esbuild: {
 		jsxFactory: 'h',
 		jsxFragment: 'Fragment',
-		jsxInject: `import { h, Fragment } from 'preact'`,
+		jsxInject: `import { h, Fragment } from 'preact'`
 	},
 	build: {
 		sourcemap: true,
 		outDir: 'dist',
-		emptyOutDir: true,
+		emptyOutDir: true
 	},
 	server: {
 		port: 8080,
-		open: false,
-	},
+		open: false
+	}
 })

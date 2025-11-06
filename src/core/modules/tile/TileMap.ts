@@ -1,7 +1,7 @@
 import { Container, Point } from 'pixi.js'
 
-import { Wall, Tile, WallMap, Avatar } from '@/core/modules'
-import { calculateWallDirections, type FaceKey, Point3D } from '@/core/utils'
+import { Tile, Avatar } from '@/core/modules'
+import { type FaceKey, Point3D } from '@/core/utils'
 
 import { selectedCube } from '@/ui/store/inventory'
 
@@ -18,17 +18,13 @@ export default class TileMap extends Container {
 		this.#tiles = []
 	}
 
-	initialize(wallMap: WallMap, avatar: Avatar): void {
-		this.#generate(wallMap)
+	initialize(avatar: Avatar, thickness: number): void {
 		this.#avatar = avatar
 
-		wallMap.on('deselect-cube', () => {
-			this.emit('hide-blueprint')
-			this.emit('enable-cubes')
-		})
+		this.#generateTiles(thickness)
 	}
 
-	#generate = (wallMap: WallMap) => {
+	#generateTiles = (thickness: number) => {
 		for (let x = 0; x < this.#grid.length; x++) {
 			const row = this.#grid[x]
 
@@ -38,7 +34,7 @@ export default class TileMap extends Container {
 				if (z === -1) continue
 
 				const position = new Point3D(x, y, z)
-				const tile = new Tile(position, this.#grid)
+				const tile = new Tile(position, this.#grid, thickness)
 
 				this.#tiles.push(tile)
 				this.addChild(tile.container)
@@ -47,16 +43,8 @@ export default class TileMap extends Container {
 					onTileClick: this.#handleTileClick,
 					onTileHover: this.#handleTileHover,
 					onTileHoverEnd: this.#handleTileHoverEnd,
-					onTileFaceRightClick: this.#handleTileFaceRightClick,
+					onTileFaceRightClick: this.#handleTileFaceRightClick
 				})
-
-				const wallDirections = calculateWallDirections(x, y)
-
-				for (let i = 0; i < wallDirections.length; i++) {
-					const direction = wallDirections[i]
-					const wall = new Wall(position, direction, this.#grid)
-					wallMap.addWall(wall)
-				}
 			}
 		}
 	}

@@ -9,7 +9,7 @@ const loadedRooms = loadFromStorage('rooms', [DEFAULT_ROOM])
 export const rooms = signal<Room[]>(
 	loadedRooms.map(room => ({
 		...room,
-		cubes: room.cubes || [],
+		cubes: room.cubes || []
 	}))
 )
 
@@ -18,6 +18,7 @@ export const currentRoomIndex = signal<number>(
 )
 
 effect(() => localStorage.setItem('rooms', JSON.stringify(rooms.value)))
+
 effect(() =>
 	localStorage.setItem(
 		'currentRoomIndex',
@@ -49,7 +50,10 @@ export const addRoom = (room: Room): Room[] => {
 }
 
 export const deleteRoom = (index: number): void => {
-	if (rooms.value.length <= 1) return
+	if (rooms.value.length <= 1) {
+		deleteAllRooms()
+		return
+	}
 
 	rooms.value = rooms.value.filter((_, i) => i !== index)
 

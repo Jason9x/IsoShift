@@ -34,8 +34,8 @@ export default class CubeContainer extends Container {
 					size * 2,
 					0,
 					size,
-					size / 2,
-				]),
+					size / 2
+				])
 			],
 			[
 				'left',
@@ -47,8 +47,8 @@ export default class CubeContainer extends Container {
 					size,
 					size * 1.5,
 					size,
-					size / 2,
-				]),
+					size / 2
+				])
 			],
 			[
 				'right',
@@ -60,9 +60,9 @@ export default class CubeContainer extends Container {
 					size,
 					size * 1.5,
 					size,
-					size / 2,
-				]),
-			],
+					size / 2
+				])
+			]
 		])
 	}
 

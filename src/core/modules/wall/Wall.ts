@@ -5,12 +5,24 @@ export default class Wall {
 	readonly #direction: WallDirection
 	readonly #container: WallContainer
 
-	constructor(position: Point3D, direction: WallDirection, grid: number[][]) {
+	constructor(
+		position: Point3D,
+		direction: WallDirection,
+		grid: number[][],
+		height: number,
+		thickness: number
+	) {
 		this.#direction = direction
 
 		const isometricPosition = cartesianToIsometric(position)
 
-		this.#container = new WallContainer(isometricPosition, direction, grid)
+		this.#container = new WallContainer(
+			isometricPosition,
+			direction,
+			grid,
+			height,
+			thickness
+		)
 
 		this.#setupEventListeners()
 	}

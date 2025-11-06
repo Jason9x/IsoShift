@@ -4,36 +4,87 @@ import { rooms } from '@/ui/store/rooms'
 type Widget = 'navigator' | 'settings' | 'inventory' | 'zoom' | 'layout'
 
 type UseWidgetStateResult = {
-	openWidget: Widget | null
+	openWidgets: Set<Widget>
+	widgetStack: Widget[]
+	isOpen: (widget: Widget) => boolean
+	getZIndex: (widget: Widget) => number
+	bringToFront: (widget: Widget) => void
 	toggle: (widget: Widget) => void
-	close: () => void
+	close: (widget: Widget) => void
 }
 
+const BASE_Z_INDEX = 10
+
 const useWidgetState = (): UseWidgetStateResult => {
-	const [openWidget, setOpenWidget] = useState<Widget | null>(null)
+	const [openWidgets, setOpenWidgets] = useState<Set<Widget>>(new Set())
+	const [widgetStack, setWidgetStack] = useState<Widget[]>([])
 	const hasRooms = rooms.value.length > 0
 
-	const toggle = (widget: Widget): void => {
-		const isLocked = widget === 'navigator' && !hasRooms
-		const shouldOpen = openWidget !== widget
-		const nextWidget = isLocked || shouldOpen ? widget : null
+	const bringToFront = (widget: Widget): void =>
+		setWidgetStack(previous => {
+			const filtered = previous.filter(
+				currentWidget => currentWidget !== widget
+			)
+			return [...filtered, widget]
+		})
 
-		setOpenWidget(nextWidget)
+	const toggle = (widget: Widget): void => {
+		setOpenWidgets(previous => {
+			const nextWidgets = new Set(previous)
+			const isCurrentlyOpen = nextWidgets.has(widget)
+
+			isCurrentlyOpen
+				? nextWidgets.delete(widget)
+				: nextWidgets.add(widget)
+
+			isCurrentlyOpen
+				? setWidgetStack(previous =>
+						previous.filter(
+							currentWidget => currentWidget !== widget
+						)
+					)
+				: bringToFront(widget)
+
+			return nextWidgets
+		})
 	}
 
-	const close = (): void => setOpenWidget(null)
+	const close = (widget: Widget): void => {
+		setOpenWidgets(previous => {
+			const nextWidgets = new Set(previous)
+			nextWidgets.delete(widget)
+
+			return nextWidgets
+		})
+
+		setWidgetStack(previous =>
+			previous.filter(currentWidget => currentWidget !== widget)
+		)
+	}
+
+	const isOpen = (widget: Widget): boolean => openWidgets.has(widget)
+
+	const getZIndex = (widget: Widget): number => {
+		const stackIndex = widgetStack.indexOf(widget)
+
+		return stackIndex === -1 ? BASE_Z_INDEX : BASE_Z_INDEX + stackIndex
+	}
 
 	useEffect(() => {
-		const shouldShowNavigator = !hasRooms && openWidget !== 'navigator'
-		const nextWidget = shouldShowNavigator ? 'navigator' : openWidget
-
-		setOpenWidget(nextWidget)
-	}, [hasRooms, openWidget])
+		if (!hasRooms) {
+			setOpenWidgets(new Set(['navigator']))
+			setWidgetStack(['navigator'])
+		}
+	}, [hasRooms])
 
 	return {
-		openWidget,
+		openWidgets,
+		widgetStack,
+		isOpen,
+		getZIndex,
+		bringToFront,
 		toggle,
-		close,
+		close
 	}
 }
 

@@ -38,26 +38,26 @@ export default class PolygonGraphics extends Graphics {
 				side: 'bottom',
 				enabled: sides.bottom,
 				startIndices: [4, 5],
-				endIndices: [6, 7],
+				endIndices: [6, 7]
 			},
 			{
 				side: 'right',
 				enabled: sides.right,
 				startIndices: [2, 3],
-				endIndices: [4, 5],
+				endIndices: [4, 5]
 			},
 			{
 				side: 'top',
 				enabled: sides.top,
 				startIndices: [0, 1],
-				endIndices: [2, 3],
+				endIndices: [2, 3]
 			},
 			{
 				side: 'left',
 				enabled: sides.left,
 				startIndices: [0, 1],
-				endIndices: [6, 7],
-			},
+				endIndices: [6, 7]
+			}
 		]
 
 		lineConfig.forEach(({ side, enabled, startIndices, endIndices }) => {

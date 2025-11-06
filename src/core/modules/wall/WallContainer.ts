@@ -1,97 +1,195 @@
-import { Container } from 'pixi.js'
+import { Container, type FederatedPointerEvent } from 'pixi.js'
 
 import WallDirection from './WallDirection'
-
+import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 import {
-	WALL_SIDE_STYLES,
-	WALL_COORDINATES,
-} from '@/core/modules/wall/constants'
+	Point3D,
+	PolygonGraphics,
+	type BoxFaces,
+	type FaceKey
+} from '@/core/utils'
 
-import { Point3D, PolygonGraphics, type BoxFaces } from '@/core/utils'
+const WALL_STYLES = {
+	left: { surface: 0x8b7355, front: 0x6b5344, back: 0x5a4233 },
+	right: { surface: 0xa0826d, front: 0x8b7355, back: 0x6b5344 }
+} as const
 
 export default class WallContainer extends Container {
 	readonly #sides: BoxFaces[]
 
-	constructor(position: Point3D, direction: WallDirection, grid: number[][]) {
+	constructor(
+		position: Point3D,
+		direction: WallDirection,
+		grid: number[][],
+		height: number,
+		thickness: number
+	) {
 		super()
 
 		this.position.copyFrom(position)
-		this.#sides = [this.#createSide(position, direction, grid)]
-
-		this.#sides.forEach(side =>
-			side.forEach(face => face && this.addChild(face))
-		)
-
 		this.eventMode = 'static'
 
-		this.on('pointerdown', async event => {
-			if (event.button !== 0) return
+		const side = this.#createSide(
+			position,
+			direction,
+			height,
+			thickness,
+			grid
+		)
 
-			const { selectedCube } = await import('@/ui/store/inventory')
+		this.#sides = [side]
 
-			event.stopPropagation()
-			selectedCube.value = null
-			this.emit('deselect-cube')
+		side.forEach(face => {
+			if (!face) return
+
+			face.eventMode = 'static'
+			this.addChild(face)
 		})
+
+		this.on('pointerdown', this.#handlePointerDown)
 	}
 
-	#createSide(position: Point3D, direction: WallDirection, grid: number[][]) {
+	#handlePointerDown = async (event: FederatedPointerEvent) => {
+		if (event.button !== 0) return
+
+		const { selectedCube } = await import('@/ui/store/inventory')
+
+		event.stopPropagation()
+		selectedCube.value = null
+
+		this.emit('deselect-cube')
+	}
+
+	#createSide(
+		position: Point3D,
+		direction: WallDirection,
+		height: number,
+		thickness: number,
+		grid: number[][]
+	): BoxFaces {
 		const isLeft = direction === WallDirection.Left
-		const styles = isLeft ? WALL_SIDE_STYLES.left : WALL_SIDE_STYLES.right
-		const coordinates = isLeft
-			? WALL_COORDINATES.left
-			: WALL_COORDINATES.right
+		const coordinates = this.#getCoordinates(isLeft, height, thickness)
+		const styles = WALL_STYLES[isLeft ? 'left' : 'right']
 
 		const isAtLeftBorder = position.x === 0 && position.y === grid.length
 		const isAtRightBorder =
 			position.y === 0 && position.x === grid.length - 1
 
-		const faces: BoxFaces = new Map([
-			[
-				'top',
-				new PolygonGraphics(
-					styles.surface.fillColor,
-					coordinates.surface,
-					styles.surface.borderColor,
-					styles.surface.borderWidth,
-					{ left: true, right: true }
-				),
-			],
+		const faceConfig: Array<[FaceKey, number, number[], string[]]> = [
+			['top', styles.surface, coordinates.surface, ['left', 'right']],
 			[
 				'left',
-				new PolygonGraphics(
-					styles.border.fillColor,
-					coordinates.border,
-					styles.border.borderColor,
-					styles.border.borderWidth,
-					{
-						top: true,
-						bottom: true,
-						left: isAtLeftBorder || isAtRightBorder,
-						right: true,
-					}
-				),
+				styles.front,
+				coordinates.front,
+				[
+					'top',
+					'bottom',
+					'right',
+					...(isAtLeftBorder || isAtRightBorder ? ['left'] : [])
+				]
 			],
 			[
 				'right',
+				styles.back,
+				coordinates.back,
+				[
+					'top',
+					'bottom',
+					...(isAtLeftBorder ? ['left'] : []),
+					...(isAtRightBorder ? ['right'] : [])
+				]
+			]
+		]
+
+		return new Map(
+			faceConfig.map(([key, color, coordinates, borders]) => [
+				key,
 				new PolygonGraphics(
-					styles.borderTop.fillColor,
-					coordinates.borderTop,
-					styles.borderTop.borderColor,
-					styles.borderTop.borderWidth,
-					{
-						top: true,
-						bottom: true,
-						left: isAtLeftBorder,
-						right: isAtRightBorder,
-					}
-				),
+					color,
+					coordinates,
+					0x000000,
+					1,
+					Object.fromEntries(borders.map(border => [border, true]))
+				)
+			])
+		) as BoxFaces
+	}
+
+	#getCoordinates(isLeft: boolean, height: number, thickness: number) {
+		const { width: tileWidth, height: tileHeight } = TILE_DIMENSIONS
+		const heightPx = height * tileHeight
+
+		const halfWidth = tileWidth / 2
+		const halfHeight = tileHeight / 2
+		const top = -heightPx
+		const topAngled = top - halfHeight
+
+		if (isLeft)
+			return {
+				surface: [
+					0,
+					halfHeight,
+					0,
+					top,
+					halfWidth,
+					topAngled,
+					halfWidth,
+					0
+				],
+				front: [
+					0,
+					halfHeight + thickness,
+					-thickness,
+					halfHeight + thickness - thickness / 2,
+					-thickness,
+					top - thickness / 2,
+					0,
+					top
+				],
+				back: [
+					-thickness,
+					top - thickness / 2,
+					halfWidth,
+					topAngled - thickness,
+					halfWidth,
+					topAngled,
+					0,
+					top
+				]
+			}
+
+		return {
+			surface: [
+				halfWidth,
+				0,
+				halfWidth,
+				topAngled,
+				tileWidth,
+				top,
+				tileWidth,
+				halfHeight
 			],
-		]) as BoxFaces
-
-		faces.forEach(face => face && (face.eventMode = 'static'))
-
-		return faces
+			front: [
+				tileWidth,
+				halfHeight + thickness,
+				tileWidth + thickness,
+				halfHeight + thickness - thickness / 2,
+				tileWidth + thickness,
+				top - thickness / 2,
+				tileWidth,
+				top
+			],
+			back: [
+				halfWidth,
+				topAngled - thickness,
+				tileWidth + thickness,
+				top - thickness / 2,
+				tileWidth,
+				top,
+				halfWidth,
+				topAngled
+			]
+		}
 	}
 
 	get sides(): BoxFaces[] {

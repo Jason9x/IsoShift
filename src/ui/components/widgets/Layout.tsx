@@ -5,10 +5,17 @@ import { currentRoom, updateRoom } from '@/ui/store/rooms'
 
 type LayoutProps = {
 	isOpen: boolean
+	zIndex: number
+	onFocus: () => void
 	onClose: () => void
 }
 
-const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
+const Layout = ({
+	isOpen,
+	zIndex,
+	onFocus,
+	onClose
+}: LayoutProps): JSX.Element | null => {
 	const room = currentRoom()
 
 	const [tempGrid, setTempGrid] = useState(room?.grid)
@@ -51,7 +58,7 @@ const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
 		updateRoom({
 			grid: tempGrid,
 			wallHeight: tempWallHeight,
-			wallThickness: tempWallThickness,
+			wallThickness: tempWallThickness
 		})
 		onClose()
 	}
@@ -77,8 +84,12 @@ const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
 	}
 
 	return (
-		<div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-			<div className="max-w-fit rounded-lg border border-gray-800/50 bg-gray-950/95 p-6 shadow-2xl backdrop-blur-md">
+		<div
+			onMouseDown={onFocus}
+			style={{ zIndex }}
+			className="pointer-events-auto fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		>
+			<div className="max-w-fit rounded-lg border border-gray-800/50 bg-gray-950/90 p-6 shadow-2xl backdrop-blur-md">
 				<h2 className="mb-4 text-lg font-bold text-gray-200">
 					Floor Layout
 				</h2>
@@ -120,13 +131,13 @@ const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
 					<div className="flex flex-col justify-center gap-2">
 						<button
 							onClick={() => handleExpand('bottom')}
-							className="rounded bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700"
+							className="rounded bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-gray-700"
 						>
 							+ Row
 						</button>
 						<button
 							onClick={() => handleShrink('bottom')}
-							className="rounded bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700"
+							className="rounded bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-gray-700"
 						>
 							- Row
 						</button>
@@ -156,13 +167,13 @@ const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
 						<div className="flex justify-center gap-2">
 							<button
 								onClick={() => handleExpand('right')}
-								className="rounded bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700"
+								className="rounded bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-gray-700"
 							>
 								+ Col
 							</button>
 							<button
 								onClick={() => handleShrink('right')}
-								className="rounded bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700"
+								className="rounded bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-gray-700"
 							>
 								- Col
 							</button>
@@ -173,19 +184,19 @@ const Layout = ({ isOpen, onClose }: LayoutProps): JSX.Element | null => {
 				<div className="flex gap-2">
 					<button
 						onClick={handleReset}
-						className="flex-1 rounded bg-red-900/50 px-4 py-2 text-sm text-gray-200 transition-all hover:bg-red-800/50"
+						className="flex-1 rounded bg-red-600 px-3 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-red-700"
 					>
 						Reset
 					</button>
 					<button
 						onClick={onClose}
-						className="flex-1 rounded bg-gray-800 px-4 py-2 text-sm text-gray-200 transition-all hover:bg-gray-700"
+						className="flex-1 rounded bg-gray-800 px-3 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-gray-700"
 					>
 						Cancel
 					</button>
 					<button
 						onClick={handleSave}
-						className="flex-1 rounded bg-blue-900/50 px-4 py-2 text-sm text-gray-200 transition-all hover:bg-blue-800/50"
+						className="flex-1 rounded bg-blue-600 px-3 py-1 text-xs font-medium text-gray-200 transition-all hover:bg-blue-700"
 					>
 						Save
 					</button>

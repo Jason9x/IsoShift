@@ -1,8 +1,6 @@
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import eslintConfigPrettier from 'eslint-config-prettier'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
 
 export default [
 	{
@@ -14,14 +12,12 @@ export default [
 				ecmaVersion: 'latest',
 				sourceType: 'module',
 				ecmaFeatures: {
-					jsx: true,
-				},
-			},
+					jsx: true
+				}
+			}
 		},
 		plugins: {
-			'@typescript-eslint': tsPlugin,
-			react: reactPlugin,
-			'react-hooks': reactHooksPlugin,
+			'@typescript-eslint': tsPlugin
 		},
 		rules: {
 			'@typescript-eslint/no-unused-vars': 'warn',
@@ -30,18 +26,15 @@ export default [
 				'warn',
 				{
 					allowArgumentsExplicitlyTypedAsAny: true,
-					allowHigherOrderFunctions: true,
-				},
+					allowHigherOrderFunctions: true
+				}
 			],
 			curly: ['error', 'multi-or-nest'],
-			'react/react-in-jsx-scope': 'off',
-			'react/jsx-uses-react': 'off',
-			'react-hooks/rules-of-hooks': 'error',
-			'react-hooks/exhaustive-deps': 'warn',
-		},
+			'arrow-body-style': ['error', 'as-needed']
+		}
 	},
 	eslintConfigPrettier,
 	{
-		ignores: ['dist/**', 'node_modules/**'],
-	},
+		ignores: ['dist/**', 'node_modules/**']
+	}
 ]

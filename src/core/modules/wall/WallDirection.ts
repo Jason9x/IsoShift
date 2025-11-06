@@ -1,6 +1,6 @@
 enum WallDirection {
 	Left,
-	Right,
+	Right
 }
 
 export default WallDirection

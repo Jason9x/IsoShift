@@ -2,7 +2,7 @@ import { Container } from 'pixi.js'
 
 import {
 	AVATAR_COLORS,
-	AVATAR_DIMENSIONS,
+	AVATAR_DIMENSIONS
 } from '@/core/modules/avatar/constants'
 
 import { PolygonGraphics, type BoxFaces, Point3D } from '@/core/utils'
@@ -28,8 +28,8 @@ export default class AvatarContainer extends Container {
 					WIDTH * 2,
 					-HEIGHT,
 					WIDTH,
-					-HEIGHT + WIDTH / 2,
-				]),
+					-HEIGHT + WIDTH / 2
+				])
 			],
 			[
 				'left',
@@ -41,8 +41,8 @@ export default class AvatarContainer extends Container {
 					WIDTH,
 					-HEIGHT + WIDTH / 2,
 					WIDTH,
-					WIDTH / 2,
-				]),
+					WIDTH / 2
+				])
 			],
 			[
 				'right',
@@ -54,9 +54,9 @@ export default class AvatarContainer extends Container {
 					WIDTH * 2,
 					-HEIGHT,
 					WIDTH * 2,
-					0,
-				]),
-			],
+					0
+				])
+			]
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))

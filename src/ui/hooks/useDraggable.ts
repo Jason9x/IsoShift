@@ -1,110 +1,157 @@
-import { type CSSProperties } from 'preact'
-import {
-	useState,
-	useRef,
-	useCallback,
-	useEffect,
-} from 'preact/hooks'
-
-type Position = {
-	left: number
-	top: number
-}
+import { useRef, useEffect } from 'preact/hooks'
+import type { RefObject } from 'preact'
 
 type DragState = {
-	startPointerX: number
-	startPointerY: number
-	startLeft: number
-	startTop: number
+	startX: number
+	startY: number
+	elementLeft: number
+	elementTop: number
+	elementWidth: number
+	elementHeight: number
 }
 
-type UseDraggableOptions = Partial<Position>
-
-type DragHandleProperties = {
-	onPointerDown: (event: PointerEvent) => void
+type UseDraggableOptions = {
+	elementRef: RefObject<HTMLElement>
 }
 
 type UseDraggableReturn = {
-	style: CSSProperties
-	handleProps: DragHandleProperties
+	handleProps: {
+		onPointerDown: (event: PointerEvent) => void
+	}
 }
 
-export const useDraggable = (
-	initialOptions?: UseDraggableOptions,
-): UseDraggableReturn => {
-	const initialPosition: Position = {
-		left: initialOptions?.left ?? 16,
-		top: initialOptions?.top ?? 16,
+export const useDraggable = ({
+	elementRef
+}: UseDraggableOptions): UseDraggableReturn => {
+	const dragState = useRef<DragState | null>(null)
+
+	const getElement = () => elementRef.current ?? undefined
+
+	const clampToViewport = (
+		left: number,
+		top: number,
+		width: number,
+		height: number
+	) => {
+		const maxLeft = Math.max(0, window.innerWidth - width)
+		const maxTop = Math.max(0, window.innerHeight - height)
+
+		return {
+			left: Math.min(Math.max(0, left), maxLeft),
+			top: Math.min(Math.max(0, top), maxTop)
+		}
 	}
 
-	const [position, setPosition] = useState<Position>(initialPosition)
-	const currentDragState = useRef<DragState | null>(null)
+	const setElementPosition = (left: number, top: number) => {
+		const element = getElement()
 
-	const handlePointerMove = useCallback((event: PointerEvent) => {
-		if (!currentDragState.current) return
+		if (!element) return
 
-		const deltaX = event.clientX - currentDragState.current.startPointerX
-		const deltaY = event.clientY - currentDragState.current.startPointerY
+		element.style.left = `${left}px`
+		element.style.top = `${top}px`
+	}
 
-		setPosition({
-			left: Math.max(0, currentDragState.current.startLeft + deltaX),
-			top: Math.max(0, currentDragState.current.startTop + deltaY),
-		})
-	}, [])
+	const onPointerMove = (event: PointerEvent) => {
+		if (!dragState.current) return
 
-	const handlePointerUp = useCallback(() => {
-		if (!currentDragState.current) return
-		
-		currentDragState.current = null
-		document.removeEventListener('pointermove', handlePointerMove)
-		document.removeEventListener('pointerup', handlePointerUp)
-	}, [handlePointerMove])
+		const {
+			startX,
+			startY,
+			elementLeft,
+			elementTop,
+			elementWidth,
+			elementHeight
+		} = dragState.current
+
+		const deltaX = event.clientX - startX
+		const deltaY = event.clientY - startY
+
+		const newLeft = elementLeft + deltaX
+		const newTop = elementTop + deltaY
+
+		const clamped = clampToViewport(
+			newLeft,
+			newTop,
+			elementWidth,
+			elementHeight
+		)
+
+		setElementPosition(clamped.left, clamped.top)
+	}
+
+	const onPointerUp = () => {
+		dragState.current = null
+
+		document.removeEventListener('pointermove', onPointerMove)
+		document.removeEventListener('pointerup', onPointerUp)
+	}
+
+	const onPointerDown = (event: PointerEvent) => {
+		if (event.button !== 0) return
+
+		const target = event.target as Element | null
+		const isInteractive = target?.closest?.(
+			'button, [role="button"], a, input, textarea, select'
+		)
+
+		if (isInteractive) return
+
+		const element = getElement()
+
+		if (!element) return
+
+		const rect = element.getBoundingClientRect()
+		const computedStyle = getComputedStyle(element)
+
+		if (computedStyle.position !== 'fixed') element.style.position = 'fixed'
+
+		element.style.right = 'auto'
+		element.style.bottom = 'auto'
+
+		if (!element.style.left && !element.style.top) {
+			element.style.left = `${rect.left}px`
+			element.style.top = `${rect.top}px`
+		}
+
+		dragState.current = {
+			startX: event.clientX,
+			startY: event.clientY,
+			elementLeft: rect.left,
+			elementTop: rect.top,
+			elementWidth: rect.width,
+			elementHeight: rect.height
+		}
+
+		document.addEventListener('pointermove', onPointerMove)
+		document.addEventListener('pointerup', onPointerUp)
+
+		event.preventDefault()
+	}
 
 	useEffect(() => {
-		return () => {
-			document.removeEventListener('pointermove', handlePointerMove)
-			document.removeEventListener('pointerup', handlePointerUp)
-		}
-	}, [handlePointerMove, handlePointerUp])
+		const onResize = () => {
+			const element = getElement()
 
-	const handlePointerDown = useCallback(
-		(event: PointerEvent) => {
-			if (event.button !== 0) return
+			if (!element) return
 
-			const target = event.target as Element | null
-			const isInteractive = target?.closest?.(
-				'button, [role="button"], a, input, textarea, select',
+			const rect = element.getBoundingClientRect()
+			const clamped = clampToViewport(
+				rect.left,
+				rect.top,
+				rect.width,
+				rect.height
 			)
-			
-			if (isInteractive) return
 
-			currentDragState.current = {
-				startPointerX: event.clientX,
-				startPointerY: event.clientY,
-				startLeft: position.left,
-				startTop: position.top,
-			}
+			if (rect.left !== clamped.left || rect.top !== clamped.top)
+				setElementPosition(clamped.left, clamped.top)
+		}
 
-			document.addEventListener('pointermove', handlePointerMove)
-			document.addEventListener('pointerup', handlePointerUp)
+		window.addEventListener('resize', onResize)
 
-			event.preventDefault()
-		},
-		[position, handlePointerMove, handlePointerUp],
-	)
-
-	const style: CSSProperties = {
-		position: 'absolute',
-		left: `${position.left}px`,
-		top: `${position.top}px`,
-		touchAction: 'none',
-		userSelect: 'none',
-	}
+		return () => window.removeEventListener('resize', onResize)
+	})
 
 	return {
-		style,
-		handleProps: { onPointerDown: handlePointerDown }
+		handleProps: { onPointerDown }
 	}
 }
-
-export default useDraggable

@@ -2,7 +2,17 @@ import { useState, useRef } from 'preact/hooks'
 import { CUBE_TYPES, selectedCube } from '../../store/inventory'
 import type { JSX } from 'preact/jsx-runtime'
 
-const Inventory = ({ isOpen }: { isOpen: boolean }): JSX.Element | null => {
+type InventoryProps = {
+	isOpen: boolean
+	zIndex: number
+	onFocus: () => void
+}
+
+const Inventory = ({
+	isOpen,
+	zIndex,
+	onFocus
+}: InventoryProps): JSX.Element | null => {
 	const [position, setPosition] = useState({ x: 16, y: 16 })
 	const [isDragging, setIsDragging] = useState(false)
 	const dragRef = useRef({ startX: 0, startY: 0 })
@@ -12,7 +22,7 @@ const Inventory = ({ isOpen }: { isOpen: boolean }): JSX.Element | null => {
 		setIsDragging(true)
 		dragRef.current = {
 			startX: e.clientX - position.x,
-			startY: e.clientY - position.y,
+			startY: e.clientY - position.y
 		}
 	}
 
@@ -20,7 +30,7 @@ const Inventory = ({ isOpen }: { isOpen: boolean }): JSX.Element | null => {
 		if (!isDragging) return
 		setPosition({
 			x: e.clientX - dragRef.current.startX,
-			y: e.clientY - dragRef.current.startY,
+			y: e.clientY - dragRef.current.startY
 		})
 	}
 
@@ -30,13 +40,17 @@ const Inventory = ({ isOpen }: { isOpen: boolean }): JSX.Element | null => {
 
 	return (
 		<div
-			className="pointer-events-auto fixed rounded-lg border border-gray-700/50 bg-gray-900/90 shadow-2xl backdrop-blur-md"
+			className="pointer-events-auto fixed rounded-lg border border-gray-800/50 bg-gray-950/90 shadow-2xl backdrop-blur-md"
 			style={{
 				left: `${position.x}px`,
 				top: `${position.y}px`,
 				cursor: isDragging ? 'grabbing' : 'grab',
+				zIndex
 			}}
-			onMouseDown={handleMouseDown}
+			onMouseDown={e => {
+				onFocus()
+				handleMouseDown(e)
+			}}
 			onMouseMove={handleMouseMove}
 			onMouseUp={handleMouseUp}
 			onMouseLeave={handleMouseUp}

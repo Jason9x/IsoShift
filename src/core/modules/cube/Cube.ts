@@ -10,7 +10,7 @@ import {
 	isometricToCartesian,
 	isValidTilePosition,
 	findClosestValidTilePosition,
-	calculateCubeOffsets,
+	calculateCubeOffsets
 } from '@/core/utils'
 
 import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
@@ -98,7 +98,7 @@ export default class Cube {
 								cube.container.destroy(),
 								onSort(),
 								onSave())
-					},
+					}
 				}
 			}
 		)
@@ -250,7 +250,7 @@ export default class Cube {
 			data: {
 				global: position,
 				originalEvent: null,
-				target: null,
+				target: null
 			},
 
 			// Methods, often present on the prototype but sometimes expected directly for strict typing
@@ -265,7 +265,7 @@ export default class Cube {
 			offsetY: 0,
 			screen: {
 				width: window.screen.width,
-				height: window.screen.height,
+				height: window.screen.height
 			} as Screen, // Cast to Screen
 			region: '',
 			relatedTarget: null,
@@ -288,7 +288,7 @@ export default class Cube {
 
 			// Client and movement properties, often expected in FederatedPointerEvent
 			client: position, // Assuming client is the same as global for simplicity
-			movement: new Point(0, 0), // No movement relative to previous event for a synthetic one
+			movement: new Point(0, 0) // No movement relative to previous event for a synthetic one
 		} as unknown as FederatedPointerEvent // Cast to unknown first, then to FederatedPointerEvent
 	}
 
