@@ -1,19 +1,26 @@
 {
-	"name": "isometric-projection",
+	"name": "room-editor",
 	"version": "1.0.0",
-	"description": "",
-	"scripts": {
+	"description": "An interactive room editor with drag-and-drop cube placement, customizable colors, and multi-room management",	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
+		"deploy": "npm run build && gh-pages -d dist",
 		"lint": "eslint . ",
 		"lint:fix": "eslint .  --fix",
 		"format": "prettier . --write",
 		"format:check": "prettier . --check"
 	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
+	"keywords": [
+		"isometric",
+		"room-editor",
+		"pixi.js",
+		"preact",
+		"typescript",
+		"vite",
+		"2d",
+		"game-editor"
+	],
 	"type": "module",
 	"dependencies": {
 		"@preact/preset-vite": "^2.10.2",
@@ -33,6 +40,7 @@
 		"eslint-plugin-prettier": "^5.5.4",
 		"eslint-plugin-react": "^7.37.5",
 		"eslint-plugin-react-hooks": "^7.0.1",
+		"gh-pages": "^6.3.0",
 		"heap-js": "^2.7.1",
 		"postcss": "^8.5.6",
 		"prettier": "^3.6.2",
