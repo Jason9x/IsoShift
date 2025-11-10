@@ -1,9 +1,0 @@
-{
-    "Codegeex.Chat.fontSize": 13,
-    "Codegeex.GenerationPreference": "automatic",
-    "Codegeex.SidebarUI.LanguagePreference": "English",
-    "Codegeex.RepoIndex": true,
-    "Codegeex.Chat.LanguagePreference": "English",
-    "Codegeex.Comment.LanguagePreference": "English",
-    "Codegeex.CommitMessage.LanguagePreference": "English"
-}
