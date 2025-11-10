@@ -11,11 +11,6 @@ export default defineConfig({
 		}
 	},
 	plugins: [preact(), tsconfigPaths()],
-	esbuild: {
-		jsxFactory: 'h',
-		jsxFragment: 'Fragment',
-		jsxInject: `import { h, Fragment } from 'preact'`
-	},
 	build: {
 		sourcemap: true,
 		outDir: 'dist',

@@ -6,7 +6,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![Vite](https://img.shields.io/badge/Vite-7.1-646CFF)
 ![Pixi.js](https://img.shields.io/badge/Pixi.js-8.14-F05A22)
-![License](https://img.shields.io/badge/License-MIT-green)
 
 **An interactive isometric room editor with drag-and-drop cube placement, customizable colors, and multi-room management**
 
