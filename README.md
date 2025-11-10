@@ -262,6 +262,6 @@ This will:
 
 **Made with ❤️**
 
-[⭐ Star this repo](https://github.com/IJason9/room-editor) if you find it helpful!
+⭐ Star this repo( if you find it helpful!
 
 </div>
