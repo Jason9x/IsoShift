@@ -38,10 +38,10 @@
 - **Drag-and-Drop Cubes**: Intuitively drag cubes around the room and stack them to create platforms
 - **Avatar Movement**: Click anywhere on the screen to move your avatar with automatic pathfinding
 - **Color Customization**: Right-click any face to open a color picker and customize:
-  - Cube faces (top, left, right)
-  - Tile surfaces and borders
-  - Wall faces
-  - Avatar faces
+    - Cube faces (top, left, right)
+    - Tile surfaces and borders
+    - Wall faces
+    - Avatar faces
 - **Room Management**: Create, rename, delete, and organize multiple rooms
 - **Grid Editor**: Customize room dimensions, wall height, thickness, and visibility
 - **Blueprint System**: Preview cube placement before dropping
@@ -69,24 +69,27 @@
 ### Installation
 
 1. **Clone the repository**
-   ```bash
-   git clone https://github.com/username/room-editor.git
-   cd room-editor
-   ```
+
+    ```bash
+    git clone https://github.com/username/room-editor.git
+    cd room-editor
+    ```
 
 2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 4. **Open your browser**
-   - Navigate to `http://localhost:8080`
-   - The application will automatically open in your default browser
+    - Navigate to `http://localhost:8080`
+    - The application will automatically open in your default browser
 
 ### Building for Production
 
@@ -117,36 +120,42 @@ This will build the project and deploy it to the `gh-pages` branch automatically
 ### Basic Controls
 
 #### Avatar Movement
+
 - **Click** anywhere on the screen to move your avatar to that position
 - The avatar will automatically navigate around obstacles using pathfinding
 
 #### Cube Placement
+
 - **Drag** cubes to move them around the room
 - **Stack** cubes on top of each other to create platforms
 - **Right-click** a cube face to open the color picker
 - Use the **Inventory** widget to select different cube sizes
 
 #### Color Customization
+
 - **Right-click** any face (cube, tile, wall, or avatar) to open the color menu
 - Use the color picker to customize individual faces
 - Tile and wall colors apply globally to all tiles/walls in the room
 
 #### Room Editing
+
 - Use the **Layout** widget to:
-  - Edit room dimensions (grid size)
-  - Adjust wall height and thickness
-  - Toggle wall visibility
-  - Set tile thickness
-  - Place doors
+    - Edit room dimensions (grid size)
+    - Adjust wall height and thickness
+    - Toggle wall visibility
+    - Set tile thickness
+    - Place doors
 
 #### Room Management
+
 - Use the **Navigator** widget to:
-  - Create new rooms
-  - Rename existing rooms
-  - Delete rooms
-  - Switch between rooms
+    - Create new rooms
+    - Rename existing rooms
+    - Delete rooms
+    - Switch between rooms
 
 #### Camera Controls
+
 - Use the **Zoom Controls** widget to zoom in/out
 - **Pan** by dragging the canvas (if implemented)
 
@@ -223,6 +232,7 @@ room-editor/
 ### Code Style
 
 The project uses:
+
 - **ESLint** for code linting
 - **Prettier** for code formatting
 - **TypeScript** for type checking
@@ -240,6 +250,7 @@ npm run deploy
 ```
 
 This will:
+
 1. Build the project for production
 2. Deploy the `dist` directory to the `gh-pages` branch
 3. Make the site available at `https://[username].github.io/room-editor/`
@@ -247,15 +258,14 @@ This will:
 ### Manual Deployment
 
 1. Build the project:
-   ```bash
-   npm run build
-   ```
+
+    ```bash
+    npm run build
+    ```
 
 2. Deploy the `dist` directory to your hosting service
 
-
 ---
-
 
 <div align="center">
 

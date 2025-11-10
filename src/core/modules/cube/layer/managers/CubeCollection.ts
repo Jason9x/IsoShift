@@ -29,15 +29,34 @@ export class CubeCollection {
 
 	findTallestAt = (position: Point3D): Cube | null =>
 		this.#cubes.reduce((tallest: Cube | null, cube: Cube) => {
-			const isAtPosition = cube.currentTile?.position.equals(position)
-			const isTaller =
-				cube.position.z > (tallest?.position.z ?? -Infinity)
+			const isAtPosition =
+				cube.currentTile?.position.x === position.x &&
+				cube.currentTile?.position.y === position.y
 
-			return isAtPosition && isTaller ? cube : tallest
+			if (!isAtPosition) return tallest
+
+			if (!tallest) return cube
+
+			const tallestTop = tallest.position.z + tallest.size
+			const currentTop = cube.position.z + cube.size
+
+			return currentTop > tallestTop ? cube : tallest
 		}, null)
 
 	setEventMode = (mode: 'none' | 'dynamic'): void =>
-		this.#cubes.forEach(cube => (cube.container.eventMode = mode))
+		this.#cubes.forEach(cube => this.#configureCubeEvents(cube, mode))
+
+	#configureCubeEvents(cube: Cube, mode: 'none' | 'dynamic'): void {
+		cube.container.eventMode = 'dynamic'
+
+		cube.container.faces.forEach(face => {
+			if (!face) return
+
+			face.eventMode = mode
+
+			if (mode === 'none') face.hitArea = null
+		})
+	}
 
 	get all(): Cube[] {
 		return this.#cubes

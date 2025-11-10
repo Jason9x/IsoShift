@@ -6,6 +6,7 @@ import type { RequiredPathfindingContext } from './Pathfinder'
 import type { Cube } from '@/core/modules'
 
 import { AVATAR_DIMENSIONS } from '@/core/modules/avatar/constants'
+import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 
 import { Point3D } from '@/core/utils'
 import { isValidTilePosition } from '@/core/modules/tile'
@@ -18,10 +19,11 @@ export const updateNodeHeight = (
 	context: RequiredPathfindingContext
 ): void => {
 	const tallestCubeAtNode = context.cubeLayer.findTallestCubeAt(node.position)
+	const tileZ = node.position.z * TILE_DIMENSIONS.height
 
 	node.height = tallestCubeAtNode
 		? tallestCubeAtNode.position.z + tallestCubeAtNode.size
-		: node.position.z
+		: tileZ
 }
 
 export const reconstructPath = (goal: PathNode): Point3D[] => {
@@ -90,11 +92,16 @@ export const isObstacle = (
 	currentNode: PathNode
 ): boolean => {
 	const cube = context.cubeLayer.findTallestCubeAt(neighborNode.position)
-	const isNarrow = cube && cube.size < AVATAR_DIMENSIONS.WIDTH
-	const maxHeight = currentNode.height + AVATAR_DIMENSIONS.HEIGHT / 1.5
-	const isTooHigh = neighborNode.height > maxHeight
+	const isNarrow = cube ? cube.size < AVATAR_DIMENSIONS.WIDTH : false
 
-	return isNarrow || isTooHigh
+	const neighborTileZ = neighborNode.position.z * TILE_DIMENSIONS.height
+
+	const maxClimbableHeight =
+		currentNode.height + AVATAR_DIMENSIONS.HEIGHT / 1.5
+	const isTileTooHigh = neighborTileZ > maxClimbableHeight
+	const isSurfaceTooHigh = neighborNode.height > maxClimbableHeight
+
+	return isNarrow || isTileTooHigh || isSurfaceTooHigh
 }
 
 export const isPathObstructed = (

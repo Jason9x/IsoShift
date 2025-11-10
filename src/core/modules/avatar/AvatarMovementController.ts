@@ -55,11 +55,7 @@ export class AvatarMovementController {
 
 		const { position } = this.#avatar
 		const distance = position.distanceTo(this.#targetPosition)
-		const speed = calculateSpeed(
-			this.#avatar,
-			this.#targetPosition,
-			this.#targetPosition.z < position.z
-		)
+		const speed = calculateSpeed(this.#avatar, this.#targetPosition)
 
 		const isWithinReach = distance <= speed * delta
 

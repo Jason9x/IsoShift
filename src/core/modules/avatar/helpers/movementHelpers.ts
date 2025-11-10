@@ -18,36 +18,25 @@ export const calculateTargetPosition = (
 
 export const calculateSpeed = (
 	avatar: Avatar,
-	targetPosition: Point3D,
-	isMovingDown: boolean
+	targetPosition: Point3D
 ): number => {
 	const direction = targetPosition.subtract(avatar.position).normalize()
 	const isStraight = direction.x === 0 || direction.y === 0
+	const isMovingDown = targetPosition.z < avatar.position.z
+	const heightDifference = avatar.position.z - targetPosition.z
 
 	let speed = isStraight
 		? AVATAR_MOVEMENT.STRAIGHT_SPEED
 		: AVATAR_MOVEMENT.BASE_SPEED
 
-	if (isMovingDown && isOnTallStack(avatar))
-		speed *= AVATAR_MOVEMENT.DOWNWARD_ACCELERATION
+	if (isMovingDown && heightDifference > TILE_DIMENSIONS.height) {
+		const heightMultiplier = heightDifference / TILE_DIMENSIONS.height
+		const accelerationMultiplier =
+			1 + (AVATAR_MOVEMENT.DOWNWARD_ACCELERATION - 1) * heightMultiplier
+
+		speed *= accelerationMultiplier
+		speed = Math.min(speed, AVATAR_MOVEMENT.MAX_FALL_SPEED)
+	}
 
 	return speed
-}
-
-export const isOnTallStack = (avatar: Avatar): boolean => {
-	const { currentTile, cubeLayer } = avatar
-
-	if (!currentTile || !cubeLayer) return false
-
-	const tallestCube = cubeLayer.findTallestCubeAt(currentTile.position)
-
-	if (!tallestCube) return false
-
-	const tileBaseZ = currentTile.position.z * TILE_DIMENSIONS.height
-	const stackTop = tallestCube.position.z + tallestCube.size
-
-	return (
-		tallestCube.position.z > tileBaseZ &&
-		stackTop > tileBaseZ + TILE_DIMENSIONS.height
-	)
 }

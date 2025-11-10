@@ -30,7 +30,7 @@ export const canMoveToTile = (
 	const tallestCube = cubesAtPosition.reduce<Cube | null>(
 		(tallest, existingCube) => {
 			if (!tallest) return existingCube
-			
+
 			const tallestTop = tallest.position.z + tallest.size
 			const currentTop = existingCube.position.z + existingCube.size
 
@@ -60,17 +60,14 @@ export const canPlaceCubeAtTile = (
 
 	if (cubesAtPosition.length === 0) return true
 
-	const tallestCube = cubesAtPosition.reduce<Cube | null>(
-		(tallest, cube) => {
-			if (!tallest) return cube
+	const tallestCube = cubesAtPosition.reduce<Cube | null>((tallest, cube) => {
+		if (!tallest) return cube
 
-			const tallestTop = tallest.position.z + tallest.size
-			const currentTop = cube.position.z + cube.size
+		const tallestTop = tallest.position.z + tallest.size
+		const currentTop = cube.position.z + cube.size
 
-			return currentTop > tallestTop ? cube : tallest
-		},
-		null
-	)
+		return currentTop > tallestTop ? cube : tallest
+	}, null)
 
 	if (tallestCube && cubeSize > tallestCube.size) return false
 

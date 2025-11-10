@@ -2,10 +2,9 @@ import Heap from 'heap-js'
 
 import PathNode from './PathNode'
 
-import type { TileMap, CubeLayer } from '@/core/modules'
+import { TileMap, CubeLayer, isValidTilePosition } from '@/core/modules'
 
 import { Point3D } from '@/core/utils'
-import { isValidTilePosition } from '@/core/modules/tile'
 
 import {
 	calculateGCost,
@@ -82,7 +81,7 @@ export default class Pathfinder {
 
 			if (closedSet.has(currentKey)) continue
 
-			// Skip outdated heap entries (a newer/better node for this position exists)
+			// Skip outdated heap entries (a newer/better node for this position exists).
 			const mapped = openMap.get(currentKey)
 
 			if (mapped && mapped !== currentNode) continue

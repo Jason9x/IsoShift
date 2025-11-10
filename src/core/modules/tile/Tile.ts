@@ -65,6 +65,7 @@ export default class Tile {
 	#setupEventListeners() {
 		const surfaceFace = this.#container.faces.get('top')
 
+		// Listen on surface face for direct hover
 		surfaceFace
 			?.on('pointerover', () =>
 				this.#container.emit('tile:hover', this.#position)
@@ -74,6 +75,13 @@ export default class Tile {
 				(event: FederatedPointerEvent) =>
 					event.button === 0 &&
 					this.#container.emit('tile:click', this.#position)
+			)
+			.on('pointerout', () => this.#container.emit('tile:hoverEnd'))
+			.on('pointerleave', () => this.#container.emit('tile:hoverEnd'))
+
+		this.#container
+			.on('pointerover', () =>
+				this.#container.emit('tile:hover', this.#position)
 			)
 			.on('pointerout', () => this.#container.emit('tile:hoverEnd'))
 			.on('pointerleave', () => this.#container.emit('tile:hoverEnd'))
