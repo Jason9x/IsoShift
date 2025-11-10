@@ -11,49 +11,93 @@ export const canMoveToTile = (
 	cube: Cube,
 	targetTile: Tile,
 	avatar?: Avatar,
-	cubeCollection?: CubeCollection
+	collection?: CubeCollection
 ): boolean => {
-	const isOccupiedByOriginOrAvatar =
-		targetTile === cube.currentTile || targetTile === avatar?.currentTile
+	if (targetTile === cube.currentTile || targetTile === avatar?.currentTile)
+		return false
 
-	if (isOccupiedByOriginOrAvatar) return false
+	if (!collection) return true
 
-	if (!cubeCollection) return true
+	const cubesAtPosition = collection.all.filter(
+		existingCube =>
+			existingCube !== cube &&
+			existingCube.currentTile?.position.x === targetTile.position.x &&
+			existingCube.currentTile?.position.y === targetTile.position.y
+	)
 
-	const tallestCube = cubeCollection.findTallestAt(targetTile.position)
+	if (cubesAtPosition.length === 0) return true
 
-	return !tallestCube || tallestCube.size <= cube.size
+	const tallestCube = cubesAtPosition.reduce<Cube | null>(
+		(tallest, existingCube) => {
+			if (!tallest) return existingCube
+			
+			const tallestTop = tallest.position.z + tallest.size
+			const currentTop = existingCube.position.z + existingCube.size
+
+			return currentTop > tallestTop ? existingCube : tallest
+		},
+		null
+	)
+
+	if (tallestCube && cube.size > tallestCube.size) return false
+
+	return true
 }
 
 export const canPlaceCubeAtTile = (
 	tile: Tile,
 	cubeSize: number,
 	avatar: Avatar | undefined,
-	cubeCollection: CubeCollection
+	collection: CubeCollection
 ): boolean => {
 	if (tile === avatar?.currentTile) return false
 
-	const tallestCube = cubeCollection.findTallestAt(tile.position)
-
-	return (
-		!tallestCube ||
-		tallestCube.position.z + tallestCube.size === tile.position.z ||
-		cubeSize <= tallestCube.size
+	const cubesAtPosition = collection.all.filter(
+		cube =>
+			cube.currentTile?.position.x === tile.position.x &&
+			cube.currentTile?.position.y === tile.position.y
 	)
+
+	if (cubesAtPosition.length === 0) return true
+
+	const tallestCube = cubesAtPosition.reduce<Cube | null>(
+		(tallest, cube) => {
+			if (!tallest) return cube
+
+			const tallestTop = tallest.position.z + tallest.size
+			const currentTop = cube.position.z + cube.size
+
+			return currentTop > tallestTop ? cube : tallest
+		},
+		null
+	)
+
+	if (tallestCube && cubeSize > tallestCube.size) return false
+
+	return true
 }
 
 export const placeCubeOnTile = (
 	cube: Cube,
 	targetTile: Tile,
-	cubeCollection: CubeCollection
+	collection: CubeCollection
 ): void => {
-	const tallestCubeAtTile = cubeCollection.findTallestAt(targetTile.position)
-	const canPlace =
-		!tallestCubeAtTile ||
-		tallestCubeAtTile === cube ||
-		cube.size >= tallestCubeAtTile.size
+	const cubesAtPosition = collection.all.filter(
+		existingCube =>
+			existingCube !== cube &&
+			existingCube.currentTile?.position.x === targetTile.position.x &&
+			existingCube.currentTile?.position.y === targetTile.position.y
+	)
 
-	if (!canPlace) return
+	const tallestCubeAtTile =
+		cubesAtPosition.reduce<Cube | null>((tallest, existingCube) => {
+			if (!tallest) return existingCube
+
+			const tallestTop = tallest.position.z + tallest.size
+			const currentTop = existingCube.position.z + existingCube.size
+
+			return currentTop > tallestTop ? existingCube : tallest
+		}, null) ?? null
 
 	const tilePosition = cartesianToIsometric(targetTile.position)
 	const newPosition = calculateCubePosition(

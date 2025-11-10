@@ -16,7 +16,7 @@ import type { Camera } from '@/core/engine/game'
 import {
 	createMockPointerEvent,
 	canMoveToTile,
-	canPlaceCubeAtTile as validateCubePlacement,
+	canPlaceCubeAtTile,
 	placeCubeOnTile
 } from '../helpers'
 
@@ -68,7 +68,7 @@ export class CubeEventHandlers {
 	}
 
 	canPlaceCubeAtTile = (tile: Tile, cubeSize: number): boolean =>
-		validateCubePlacement(tile, cubeSize, this.#avatar, this.#collection)
+		canPlaceCubeAtTile(tile, cubeSize, this.#avatar, this.#collection)
 
 	#handleClick = async (cube: Cube, globalPosition: Point): Promise<void> => {
 		if (this.#menuHandler.justFinishedDragging) return
