@@ -1,6 +1,8 @@
-import { useState, useRef } from 'preact/hooks'
-import { CUBE_TYPES, selectedCube } from '../../store/inventory'
-import type { JSX } from 'preact/jsx-runtime'
+import { useRef } from 'preact/hooks'
+import type { JSX } from 'preact'
+
+import { useDraggable } from '@/ui/hooks'
+import { CUBE_TYPES, selectedCube } from '@/ui/store/inventory'
 
 type InventoryProps = {
 	isOpen: boolean
@@ -13,60 +15,33 @@ const Inventory = ({
 	zIndex,
 	onFocus
 }: InventoryProps): JSX.Element | null => {
-	const [position, setPosition] = useState({ x: 16, y: 16 })
-	const [isDragging, setIsDragging] = useState(false)
-	const dragRef = useRef({ startX: 0, startY: 0 })
-
-	const handleMouseDown = (e: MouseEvent) => {
-		if ((e.target as HTMLElement).tagName === 'BUTTON') return
-		setIsDragging(true)
-		dragRef.current = {
-			startX: e.clientX - position.x,
-			startY: e.clientY - position.y
-		}
-	}
-
-	const handleMouseMove = (e: MouseEvent) => {
-		if (!isDragging) return
-		setPosition({
-			x: e.clientX - dragRef.current.startX,
-			y: e.clientY - dragRef.current.startY
-		})
-	}
-
-	const handleMouseUp = () => setIsDragging(false)
+	const ref = useRef<HTMLDivElement>(null)
+	const { handleProps } = useDraggable({ elementRef: ref })
 
 	if (!isOpen) return null
 
 	return (
 		<div
-			className="pointer-events-auto fixed rounded-lg border border-gray-800/50 bg-gray-950/90 shadow-2xl backdrop-blur-md"
-			style={{
-				left: `${position.x}px`,
-				top: `${position.y}px`,
-				cursor: isDragging ? 'grabbing' : 'grab',
-				zIndex
-			}}
-			onMouseDown={e => {
-				onFocus()
-				handleMouseDown(e)
-			}}
-			onMouseMove={handleMouseMove}
-			onMouseUp={handleMouseUp}
-			onMouseLeave={handleMouseUp}
+			ref={ref}
+			{...handleProps}
+			onMouseDown={onFocus}
+			style={{ zIndex }}
+			className="w-50 pointer-events-auto fixed left-5 top-5 flex cursor-grab flex-col rounded-lg border border-gray-800/50 bg-gray-950/90 p-3 text-gray-200 shadow-2xl backdrop-blur-md active:cursor-grabbing"
 		>
-			<div className="flex gap-1 p-1.5">
-				{CUBE_TYPES.map((cube, i) => (
+			<h2 className="mb-3 text-sm font-bold">Inventory</h2>
+
+			<div className="flex flex-wrap gap-2">
+				{CUBE_TYPES.map((cube, index) => (
 					<button
-						key={i}
+						key={index}
 						onClick={() =>
 							(selectedCube.value =
 								selectedCube.value === cube ? null : cube)
 						}
-						className={`rounded px-2 py-1.5 text-xs font-medium transition-all ${
+						className={`rounded px-3 py-2 text-xs font-medium transition-all ${
 							selectedCube.value === cube
-								? 'bg-blue-500 text-white shadow-lg'
-								: 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-800 text-gray-300 hover:bg-gray-700'
 						}`}
 						title={cube.name}
 					>

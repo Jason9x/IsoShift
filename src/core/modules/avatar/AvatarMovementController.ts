@@ -1,98 +1,135 @@
 import Avatar from './Avatar'
-import { AVATAR_OFFSETS, AVATAR_SPEED } from './constants'
 
-import { Point3D, cartesianToIsometric } from '@/core/utils'
+import {
+	calculateTargetPosition,
+	calculateSpeed
+} from './helpers/movementHelpers'
 
-import Pathfinder from '@/core/engine/pathfinding/Pathfinder'
+import { Pathfinder } from '@/core/engine'
+import { Point3D } from '@/core/utils'
 
 export class AvatarMovementController {
 	readonly #avatar: Avatar
 
 	#targetPosition?: Point3D
-	#isMoving: boolean = false
+	#targetTilePosition?: Point3D
 	#onMovementComplete?: () => void
+	#movementToken = 0
 
 	constructor(avatar: Avatar) {
 		this.#avatar = avatar
 	}
 
-	initialize(): void {
-		this.#targetPosition = new Point3D(0, 0, 0)
-	}
-
 	async moveTo(goal: Point3D): Promise<void> {
-		const start = this.#avatar.currentTile?.position
-		const tileMap = this.#avatar.tileMap
-		const cubeLayer = this.#avatar.cubeLayer
+		const startPosition =
+			this.#targetTilePosition ?? this.#avatar.currentTile?.position
+
+		if (!startPosition) return
 
 		const path = Pathfinder.findPath({
-			start,
+			start: startPosition,
 			goal,
-			tileMap,
-			cubeLayer
+			tileMap: this.#avatar.tileMap,
+			cubeLayer: this.#avatar.cubeLayer
 		})
 
-		if (!path || path.length === 0) return
+		if (!path?.length) return
+
+		if (path[0]?.equals(startPosition)) path.shift()
+
+		this.#cancelCurrentMovement()
+
+		const movementToken = ++this.#movementToken
 
 		for (const position of path) {
-			const targetPosition = this.#calculateTargetPosition(position)
+			if (movementToken !== this.#movementToken) break
 
-			this.#targetPosition?.copyFrom(targetPosition)
-			this.#avatar.currentTile =
-				this.#avatar.tileMap?.findTileByExactPosition(position)
-			this.#isMoving = true
-			this.#avatar.cubeLayer?.adjustRenderingOrder(this.#avatar)
+			await this.#moveToPosition(position, movementToken)
 
-			await new Promise<void>(
-				resolve => (this.#onMovementComplete = resolve)
-			)
+			if (movementToken !== this.#movementToken) return
 		}
 	}
 
 	async update(delta: number): Promise<void> {
-		if (!this.#isMoving || !this.#targetPosition) return
+		if (!this.#targetPosition) return
 
-		const direction = this.#targetPosition
-			.subtract(this.#avatar.position)
-			.normalize()
-
-		const speed =
-			direction.x === 0 || direction.y === 0
-				? AVATAR_SPEED * 1.2
-				: AVATAR_SPEED
-
-		const remainingDistance = this.#avatar.position.distanceTo(
-			this.#targetPosition
+		const { position } = this.#avatar
+		const distance = position.distanceTo(this.#targetPosition)
+		const speed = calculateSpeed(
+			this.#avatar,
+			this.#targetPosition,
+			this.#targetPosition.z < position.z
 		)
 
-		if (remainingDistance <= speed * delta) {
+		const isWithinReach = distance <= speed * delta
+
+		if (isWithinReach) {
 			this.#handleDestinationReached()
 			return
 		}
 
-		const movementVector = direction?.scale(speed * delta)
+		const movement = this.#targetPosition
+			.subtract(position)
+			.normalize()
+			.scale(speed * delta)
 
-		if (!movementVector) return
-
-		const newPosition = this.#avatar.position.add(movementVector)
-
-		this.#avatar.updateAvatarPosition(newPosition)
+		if (movement) this.#avatar.updatePosition(position.add(movement))
 	}
 
-	#calculateTargetPosition(position: Point3D) {
-		const target = cartesianToIsometric(position).add(AVATAR_OFFSETS)
-		const tallestCube = this.#avatar.cubeLayer?.findTallestCubeAt(position)
+	#moveToPosition(position: Point3D, movementToken: number): Promise<void> {
+		this.#targetPosition = calculateTargetPosition(this.#avatar, position)
+		this.#targetTilePosition = position
+		this.#avatar.cubeLayer?.adjustRenderingOrder(this.#avatar)
 
-		if (tallestCube) target.z = tallestCube.position.z + tallestCube.size
+		return new Promise<void>(
+			resolve =>
+				(this.#onMovementComplete = () => {
+					if (movementToken !== this.#movementToken) {
+						resolve()
+						return
+					}
 
-		return target
+					resolve()
+				})
+		)
 	}
 
-	#handleDestinationReached() {
-		if (this.#targetPosition)
-			this.#avatar.updateAvatarPosition(this.#targetPosition)
+	#handleDestinationReached(): void {
+		if (!this.#targetPosition) return
+
+		this.#avatar.updatePosition(this.#targetPosition)
+		this.#updateCurrentTile()
+		this.#cleanup()
+	}
+
+	#updateCurrentTile(): void {
+		if (!this.#targetTilePosition) return
+
+		const tile = this.#avatar.tileMap?.findTileByExactPosition(
+			this.#targetTilePosition
+		)
+
+		if (tile) this.#avatar.currentTile = tile
+	}
+
+	#cleanup(): void {
+		this.#targetTilePosition = undefined
+		this.#targetPosition = undefined
+
+		this.#avatar.cubeLayer?.adjustRenderingOrder(this.#avatar)
+
 		this.#onMovementComplete?.()
 		this.#onMovementComplete = undefined
-		this.#isMoving = false
+	}
+
+	#cancelCurrentMovement(): void {
+		this.#targetTilePosition = undefined
+		this.#targetPosition = undefined
+
+		if (!this.#onMovementComplete) return
+
+		const resolve = this.#onMovementComplete
+		this.#onMovementComplete = undefined
+		resolve()
 	}
 }

@@ -3,16 +3,16 @@ export type WallDimensions = {
 	thickness: number
 }
 
-export type WallStyle = {
-	fillColor: number
-	borderColor?: number
-	borderWidth?: number
-}
-
 export type WallStyles = {
 	surface: WallStyle
 	border: WallStyle
 	borderTop: WallStyle
+}
+
+type WallStyle = {
+	fillColor: number
+	borderColor?: number
+	borderWidth?: number
 }
 
 export type WallSideStyles = {

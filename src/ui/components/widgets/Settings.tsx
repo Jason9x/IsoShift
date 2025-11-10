@@ -1,5 +1,5 @@
 import { useRef } from 'preact/hooks'
-import type { JSX } from 'preact/jsx-runtime'
+import type { JSX } from 'preact'
 
 import { useDraggable, useRoomSettings } from '@/ui/hooks'
 

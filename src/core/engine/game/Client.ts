@@ -1,48 +1,39 @@
-import type { Application } from 'pixi.js'
-import type { Viewport } from 'pixi-viewport'
+import { Ticker, type Application } from 'pixi.js'
 
-import SceneManager from './SceneManager'
+import { SceneManager } from './scene'
 import Camera from './Camera'
 
 export default class Client {
-	readonly #application: Application
+	async initialize(application: Application): Promise<void> {
+		await this.#setupApplication(application)
 
-	constructor(application: Application) {
-		this.#application = application
+		const camera = await this.#setupCamera(application)
 
-		this.#initialize()
+		this.#setupEventListeners(application, camera)
+
+		new SceneManager().watchRoomChanges(camera)
+
+		if (!Ticker.shared.started) Ticker.shared.start()
 	}
 
-	async #initialize() {
-		await this.#setupApplication()
-
-		const camera = await this.#setupCamera()
-		this.#setupEventListeners(camera.viewport)
-
-		new SceneManager().watchRoomChanges(camera).startTicker()
-	}
-
-	async #setupApplication() {
-		await this.#application.init({
+	async #setupApplication(application: Application) {
+		await application.init({
 			width: window.innerWidth,
 			height: window.innerHeight,
 			background: 0x000000,
 			resolution: 1
 		})
 
-		document.body.appendChild(this.#application.canvas)
+		document.body.appendChild(application.canvas)
 	}
 
-	async #setupCamera(): Promise<Camera> {
-		const camera = new Camera(this.#application)
+	async #setupCamera(application: Application): Promise<Camera> {
+		const camera = new Camera(application)
 		const { viewport } = camera
 
-		this.#application.stage.addChild(viewport)
+		application.stage.addChild(viewport)
 
-		viewport.position.set(
-			this.#application.screen.width / 2,
-			this.#application.screen.height / 2
-		)
+		camera.center(application.screen)
 
 		const { setViewport } = await import('@/ui/viewport')
 		setViewport(viewport)
@@ -50,18 +41,15 @@ export default class Client {
 		return camera
 	}
 
-	#setupEventListeners(viewport: Viewport) {
+	#setupEventListeners(application: Application, camera: Camera) {
 		window.addEventListener('resize', () => {
 			const width = window.innerWidth
 			const height = window.innerHeight
 
-			this.#application.renderer.resize(width, height)
+			application.renderer.resize(width, height)
 
-			viewport.resize(width, height)
-			viewport.position.set(
-				this.#application.screen.width / 2,
-				this.#application.screen.height / 2
-			)
+			camera.viewport.resize(width, height)
+			camera.center(application.screen)
 		})
 
 		window.addEventListener('contextmenu', event => event.preventDefault())

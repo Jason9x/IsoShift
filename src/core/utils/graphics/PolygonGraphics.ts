@@ -9,7 +9,6 @@ export type Sides = {
 
 export default class PolygonGraphics extends Graphics {
 	readonly #points: number[]
-	readonly #lines = new Map<string, Graphics>()
 
 	constructor(
 		color: number,
@@ -24,6 +23,10 @@ export default class PolygonGraphics extends Graphics {
 		this.draw(color)
 
 		if (lineColor && lineWidth) this.#drawLines(lineColor, lineWidth, sides)
+	}
+
+	get points(): number[] {
+		return this.#points
 	}
 
 	draw(color: number): void {
@@ -60,28 +63,24 @@ export default class PolygonGraphics extends Graphics {
 			}
 		]
 
-		lineConfig.forEach(({ side, enabled, startIndices, endIndices }) => {
+		lineConfig.forEach(({ enabled, startIndices, endIndices }) => {
 			if (!enabled) return
 
-			let line = this.#lines.get(side)
-
-			if (!line) {
-				line = new Graphics()
-
-				this.#lines.set(side, line)
-				this.addChild(line)
-			}
+			const line = new Graphics()
 
 			line.clear()
-			line.setStrokeStyle({ width: lineWidth, color: lineColor })
-			line.moveTo(
-				this.#points[startIndices[0]],
-				this.#points[startIndices[1]]
-			)
-			line.lineTo(
-				this.#points[endIndices[0]],
-				this.#points[endIndices[1]]
-			).stroke()
+				.setStrokeStyle({ width: lineWidth, color: lineColor })
+				.moveTo(
+					this.#points[startIndices[0]],
+					this.#points[startIndices[1]]
+				)
+				.lineTo(
+					this.#points[endIndices[0]],
+					this.#points[endIndices[1]]
+				)
+				.stroke()
+
+			this.addChild(line)
 		})
 	}
 }

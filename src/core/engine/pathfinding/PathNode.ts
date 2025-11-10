@@ -4,7 +4,6 @@ export default class PathNode {
 	readonly #position: Point3D
 
 	#gCost: number = 0
-	#hCost: number = 0
 	#fCost: number = 0
 
 	#parent: PathNode | null = null
@@ -24,14 +23,6 @@ export default class PathNode {
 
 	set gCost(value: number) {
 		this.#gCost = value
-	}
-
-	get hCost(): number {
-		return this.#hCost
-	}
-
-	set hCost(value: number) {
-		this.#hCost = value
 	}
 
 	get fCost(): number {

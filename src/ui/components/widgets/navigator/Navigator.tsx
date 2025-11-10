@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'preact/hooks'
-import type { JSX } from 'preact/jsx-runtime'
+import type { JSX } from 'preact'
 
 import { useDraggable } from '@/ui/hooks'
 
@@ -70,8 +70,10 @@ const Navigator = ({
 			{...handleProps}
 			onMouseDown={onFocus}
 			style={{ zIndex }}
-			className="pointer-events-auto fixed left-5 top-5 w-64 cursor-grab rounded-lg border border-gray-800/50 bg-gray-950/90 p-4 text-gray-200 shadow-2xl backdrop-blur-md active:cursor-grabbing"
+			className="pointer-events-auto fixed left-5 top-5 w-64 cursor-grab rounded-lg border border-gray-800/50 bg-gray-950/90 p-3 text-gray-200 shadow-2xl backdrop-blur-md active:cursor-grabbing"
 		>
+			<h2 className="mb-3 text-sm font-bold">Navigator</h2>
+
 			<div className="mb-3 flex items-center gap-2">
 				{hasRooms && (
 					<button

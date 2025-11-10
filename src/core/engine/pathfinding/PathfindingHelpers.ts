@@ -5,10 +5,10 @@ import type { RequiredPathfindingContext } from './Pathfinder'
 
 import type { Cube } from '@/core/modules'
 
-import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 import { AVATAR_DIMENSIONS } from '@/core/modules/avatar/constants'
 
-import { isValidTilePosition, Point3D } from '@/core/utils'
+import { Point3D } from '@/core/utils'
+import { isValidTilePosition } from '@/core/modules/tile'
 
 const DIAGONAL_COST = Math.sqrt(2)
 const HORIZONTAL_VERTICAL_COST = 1.0
@@ -21,7 +21,7 @@ export const updateNodeHeight = (
 
 	node.height = tallestCubeAtNode
 		? tallestCubeAtNode.position.z + tallestCubeAtNode.size
-		: node.position.z + TILE_DIMENSIONS.thickness
+		: node.position.z
 }
 
 export const reconstructPath = (goal: PathNode): Point3D[] => {

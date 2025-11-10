@@ -1,4 +1,4 @@
-export * from './navigator'
+export * from './Navigator'
 export { default as Inventory } from './Inventory'
 export { default as Layout } from './Layout'
 export { default as Settings } from './Settings'

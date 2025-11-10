@@ -1,120 +1,63 @@
 import { FederatedPointerEvent, Point } from 'pixi.js'
-import type { Viewport } from 'pixi-viewport'
 
-import { Tile, TileMap, CubeContainer } from '@/core/modules'
-import {
-	PolygonGraphics,
-	Point3D,
-	createColorInput,
-	cartesianToIsometric,
-	isometricToCartesian,
-	isValidTilePosition,
-	findClosestValidTilePosition,
-	calculateCubeOffsets
-} from '@/core/utils'
+import { Tile, CubeContainer } from '@/core/modules'
+import { Point3D, createColorInput } from '@/core/utils'
 
-import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
+export enum DragState {
+	Idle = 'idle',
+	Enabled = 'enabled',
+	Dragging = 'dragging'
+}
 
-export default class Cube {
+export class Cube {
 	readonly #position: Point3D
 	readonly #size: number
 	readonly #container: CubeContainer
 
 	#currentTile: Tile | undefined
-	#isDragging = false
-	#dragEnabled = false
+	#dragState = DragState.Idle
+	#flipped: boolean
 
-	constructor(position: Point3D, size: number, currentTile: Tile) {
+	constructor(
+		position: Point3D,
+		size: number,
+		currentTile: Tile,
+		flipped: boolean = false
+	) {
 		this.#position = position
 		this.#size = size
+		this.#flipped = flipped
 		this.#currentTile = currentTile
+		this.#container = new CubeContainer(position, size)
 
-		const isometricPosition = cartesianToIsometric(position)
-
-		this.#container = new CubeContainer(isometricPosition, size)
+		this.#applyFlip()
 		this.#setupEventListeners()
 	}
 
-	static create(
-		position: Point3D,
-		size: number,
-		tileMap: TileMap,
-		cubes: Cube[],
-		isBlueprint = false
-	): Cube | null {
-		const s = Math.max(8, Math.min(size, TILE_DIMENSIONS.height))
-		const validPosition = isValidTilePosition(position, tileMap)
-			? position
-			: findClosestValidTilePosition(position, tileMap.grid)
-		if (!validPosition) return null
+	setDragState = (state: DragState): DragState => (this.#dragState = state)
 
-		const tile = tileMap.findTileByExactPosition(validPosition)
-		if (!tile) return null
+	beginDrag = (): void => {
+		if (this.#dragState !== DragState.Enabled) return
 
-		const tallest = cubes.reduce(
-			(t: Cube | null, c) =>
-				c.currentTile?.position.equals(validPosition) &&
-				c.position.z > (t?.position.z ?? -Infinity)
-					? c
-					: t,
-			null
-		)
-		if (!isBlueprint && tallest && tallest.size >= s) return null
-
-		const isometricPosition = cartesianToIsometric(validPosition).subtract(
-			calculateCubeOffsets(s)
-		)
-		isometricPosition.z = tallest
-			? tallest.position.z + tallest.size
-			: isometricPosition.z
-		const cartPosition = isometricToCartesian(isometricPosition)
-
-		return new Cube(cartPosition, s, tile)
+		this.#dragState = DragState.Dragging
+		this.#container.emit('cube-drag-start', this)
 	}
 
-	setupInteractions(
-		viewport: Viewport,
-		onSave: () => void,
-		onSort: () => void,
-		cubes: Cube[]
-	): void {
-		this.#container.on(
-			'cube-clicked',
-			async (cube: Cube, globalPosition: Point) => {
-				const { cubeMenuState } = await import('@/ui/store/cubeMenu')
-				cubeMenuState.value = {
-					x: globalPosition.x,
-					y: globalPosition.y,
-					onRotate: () => console.log('Rotate'),
-					onMove: () => (
-						(viewport.pause = true),
-						(cube.container.alpha = 0.5),
-						cube.enableDrag()
-					),
-					onDelete: () => {
-						const i = cubes.indexOf(cube)
-						if (i > -1)
-							(cubes.splice(i, 1),
-								cube.container.destroy(),
-								onSort(),
-								onSave())
-					}
-				}
-			}
-		)
-		this.#container.on(
-			'cube-drag-start',
-			() => ((viewport.pause = true), (this.#container.alpha = 0.5))
-		)
-		this.#container.on(
-			'cube-drag-end',
-			() => ((viewport.pause = false), onSave())
-		)
+	placeOnTile(tile: Tile, newPosition: Point3D): void {
+		this.#updatePosition(newPosition)
+		this.#currentTile = tile
 	}
 
-	#setupEventListeners() {
+	flip(): void {
+		this.#flipped = !this.#flipped
+		this.#applyFlip()
+	}
+
+	#setupEventListeners(): void {
 		this.#container.faces.forEach(face =>
-			face?.on('rightdown', this.#handleFaceClick.bind(this, face))
+			face?.on('rightdown', () =>
+				createColorInput(hexColor => face.draw(hexColor))
+			)
 		)
 
 		this.#container
@@ -126,185 +69,87 @@ export default class Cube {
 			.on('pointerupoutside', this.#handleDragEnd.bind(this))
 	}
 
-	#handleFaceClick = (face: PolygonGraphics) =>
-		createColorInput(hexColor => face.draw(hexColor))
-
 	async #handlePointerDown(event: FederatedPointerEvent) {
 		if (event.button !== 0) return
 
 		const { selectedCube } = await import('@/ui/store/inventory')
+
 		if (selectedCube.value) return
 
-		if (this.#dragEnabled) {
-			this.#isDragging = true
-			this.#container.emit('cube-drag-start', this)
-		} else {
-			this.#container.emit('cube-clicked', this, event.global)
+		if (this.#dragState === DragState.Dragging) return
+
+		if (this.#dragState === DragState.Enabled) {
+			this.beginDrag()
+			return
 		}
+
+		this.#container.emit('cube-clicked', this, event.global)
 	}
 
 	#handlePointerOver = (event: FederatedPointerEvent) =>
-		this.#currentTile?.container?.emit(
-			'pointerover',
-			this.#createSyntheticPointerEvent(event.global, 'pointerover')
-		)
+		this.#forwardPointerEvent('pointerover', event.global)
 
 	#handlePointerOut = (event: FederatedPointerEvent) =>
-		this.#currentTile?.container?.emit(
-			'pointerout',
-			this.#createSyntheticPointerEvent(event.global, 'pointerout')
-		)
+		this.#forwardPointerEvent('pointerout', event.global)
+
+	#forwardPointerEvent = (
+		type: 'pointerover' | 'pointerout',
+		position: Point
+	): void => {
+		const mockEvent = {
+			global: position,
+			x: position.x,
+			y: position.y,
+			globalX: position.x,
+			globalY: position.y
+		} as FederatedPointerEvent
+
+		this.#currentTile?.container.emit(type, mockEvent)
+	}
 
 	#handleDragMove(event: FederatedPointerEvent) {
-		if (!this.#isDragging) return
+		if (this.#dragState !== DragState.Dragging) return
+
 		this.#container.emit('cube-drag-move', this, event.global)
 	}
 
 	#handleDragEnd() {
-		this.#container.alpha = 1
-		this.#isDragging = false
-		this.#dragEnabled = false
+		if (this.#dragState !== DragState.Dragging) return
+
 		this.#container.emit('cube-drag-end', this)
 	}
 
-	placeOnTile(tile: Tile, newPosition: Point3D): void {
-		this.#updatePosition(newPosition)
-		this.#currentTile = tile
-	}
-
-	#updatePosition(position: Point3D) {
+	#updatePosition(position: Point3D): void {
 		this.#position.copyFrom(position)
-
-		const isometricPosition = cartesianToIsometric(position)
 		this.#container.position.set(
-			isometricPosition.x,
-			isometricPosition.y - isometricPosition.z
+			position.x + this.#size,
+			position.y - position.z
 		)
 	}
 
-	/**
-	 * Creates a synthetic FederatedPointerEvent object for internal use.
-	 * This helps satisfy TypeScript's strict type checking for PixiJS events
-	 * when simulating pointer interactions.
-	 * @param position The global position of the pointer.
-	 * @param type The type of the event (e.g., 'pointerout', 'pointerover').
-	 * @returns A new FederatedPointerEvent object.
-	 */
-	#createSyntheticPointerEvent = (
-		position: Point,
-		type: string
-	): FederatedPointerEvent => {
-		return {
-			// PointerEvent properties
-			pointerId: 0,
-			width: 1,
-			height: 1,
-			isPrimary: true,
-			pointerType: 'mouse',
-			pressure: 0.5,
-			tangentialPressure: 0,
-			tiltX: 0,
-			tiltY: 0,
-			twist: 0,
-			altitudeAngle: Math.PI / 2, // 90 degrees
-			azimuthAngle: 0,
-
-			// MouseEvent properties
-			button: 0, // Left button
-			buttons: 1, // Left button pressed (for drag context)
-			clientX: position.x,
-			clientY: position.y,
-			pageX: position.x,
-			pageY: position.y,
-			screenX: position.x,
-			screenY: position.y,
-			altKey: false,
-			ctrlKey: false,
-			metaKey: false,
-			shiftKey: false,
-
-			// UIEvent properties
-			detail: 0,
-			view: window, // Dummy window object
-
-			// Event properties
-			bubbles: true,
-			cancelable: true,
-			composed: true,
-			currentTarget: null,
-			defaultPrevented: false,
-			eventPhase: 0,
-			isTrusted: false, // Not a real browser event
-			returnValue: true,
-			srcElement: null,
-			target: null, // Will be set by Pixi's event system
-			timeStamp: performance.now(),
-			type: type,
-
-			// Pixi-specific properties
-			global: position, // The global Point
-			x: position.x,
-			y: position.y,
-			globalX: position.x,
-			globalY: position.y,
-			data: {
-				global: position,
-				originalEvent: null,
-				target: null
-			},
-
-			// Methods, often present on the prototype but sometimes expected directly for strict typing
-			getCoalescedEvents: () => [],
-			getPredictedEvents: () => [],
-			stopPropagation: () => {},
-			stopImmediatePropagation: () => {},
-			preventDefault: () => {},
-			movementX: 0,
-			movementY: 0,
-			offsetX: 0,
-			offsetY: 0,
-			screen: {
-				width: window.screen.width,
-				height: window.screen.height
-			} as Screen, // Cast to Screen
-			region: '',
-			relatedTarget: null,
-			which: 0,
-			char: '',
-			charCode: 0,
-			key: '',
-			keyCode: 0,
-			locale: '',
-			location: 0,
-			repeat: false,
-			sourceCapabilities: null,
-			DOM_KEY_LOCATION_STANDARD: 0,
-			DOM_KEY_LOCATION_LEFT: 1,
-			DOM_KEY_LOCATION_RIGHT: 2,
-			DOM_KEY_LOCATION_NUMPAD: 3,
-			getModifierState: () => false,
-			initKeyboardEvent: () => {},
-			initMouseEvent: () => {},
-
-			// Client and movement properties, often expected in FederatedPointerEvent
-			client: position, // Assuming client is the same as global for simplicity
-			movement: new Point(0, 0) // No movement relative to previous event for a synthetic one
-		} as unknown as FederatedPointerEvent // Cast to unknown first, then to FederatedPointerEvent
-	}
+	#applyFlip = () => (this.#container.scale.x = this.#flipped ? -1 : 1)
 
 	get position(): Point3D {
 		return this.#position
 	}
+
 	get size(): number {
 		return this.#size
 	}
+
 	get container(): CubeContainer {
 		return this.#container
 	}
+
 	get currentTile(): Tile | undefined {
 		return this.#currentTile
 	}
-	enableDrag(): void {
-		this.#dragEnabled = true
+
+	get dragState(): DragState {
+		return this.#dragState
+	}
+
+	get flipped(): boolean {
+		return this.#flipped
 	}
 }

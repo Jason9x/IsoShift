@@ -1,29 +1,27 @@
 import { Container } from 'pixi.js'
 
-import { PolygonGraphics, type BoxFaces, Point3D } from '@/core/utils'
 import { CUBE_FACE_COLORS } from '@/core/modules/cube/constants'
+import { PolygonGraphics, type BoxFaces, Point3D } from '@/core/utils'
 
 export default class CubeContainer extends Container {
-	readonly #size: number
 	readonly #faces: BoxFaces
 
 	constructor(position: Point3D, size: number) {
 		super()
 
-		this.position.set(position.x, position.y - position.z)
+		this.pivot.set(size, 0)
+		this.position.set(position.x + size, position.y - position.z)
 
-		this.#size = size
-		this.#faces = this.#createFaces()
-
-		this.#faces.forEach(face => face && this.addChild(face))
+		this.#faces = this.#createFaces(size)
+		this.#faces.forEach(face => {
+			if (face) this.addChild(face)
+		})
 
 		this.eventMode = 'dynamic'
 	}
 
-	#createFaces(): BoxFaces {
-		const size = this.#size
-
-		return new Map([
+	#createFaces = (size: number): BoxFaces =>
+		new Map([
 			[
 				'top',
 				new PolygonGraphics(CUBE_FACE_COLORS.topFace, [
@@ -64,7 +62,6 @@ export default class CubeContainer extends Container {
 				])
 			]
 		])
-	}
 
 	get faces(): BoxFaces {
 		return this.#faces

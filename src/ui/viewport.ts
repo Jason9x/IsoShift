@@ -15,3 +15,5 @@ export const setViewport = (instance: Viewport): void => {
 		viewport?.setZoom(zoom.value, true)
 	})
 }
+
+export const getViewport = (): Viewport | null => viewport

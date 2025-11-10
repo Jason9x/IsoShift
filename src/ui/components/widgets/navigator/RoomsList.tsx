@@ -1,4 +1,4 @@
-import type { JSX } from 'preact/jsx-runtime'
+import type { JSX } from 'preact'
 import { rooms, currentRoomIndex, switchRoom } from '@/ui/store/rooms'
 
 type RoomsListProps = {

@@ -1,7 +1,7 @@
 import { Point } from 'pixi.js'
 
 import { Point3D } from '@/core/utils/coordinates'
-import type { TileMap } from '@/core/modules'
+import type TileMap from './TileMap'
 
 export const isValidTilePosition = (
 	position: Point3D,

@@ -1,30 +1,45 @@
 import { Container, Point } from 'pixi.js'
 
-import { Tile, Avatar } from '@/core/modules'
-import { type FaceKey, Point3D } from '@/core/utils'
+import Tile from './Tile'
 
-import { selectedCube } from '@/ui/store/inventory'
+import type { Avatar } from '@/core/modules/avatar'
+
+import { Point3D, type FaceKey } from '@/core/utils'
+
+import type Camera from '@/core/engine/game/Camera'
+
+import {
+	TileHoverManager,
+	TileEventHandlers,
+	CameraTrackingManager
+} from './managers'
 
 export default class TileMap extends Container {
 	readonly #grid: number[][]
 	readonly #tiles: Tile[]
-
-	#avatar?: Avatar
+	readonly #hoverManager: TileHoverManager
+	readonly #eventHandlers: TileEventHandlers
 
 	constructor(grid: number[][]) {
 		super()
 
 		this.#grid = grid
 		this.#tiles = []
+
+		this.#hoverManager = new TileHoverManager(
+			() => this.emit('hide-blueprint'),
+			(position, size) => this.emit('show-blueprint', position, size),
+			() => this.emit('enable-cubes'),
+			() => this.emit('disable-cubes')
+		)
+
+		this.#eventHandlers = new TileEventHandlers(
+			(position, size) => this.emit('place-cube', position, size),
+			position => this.emit('tile-clicked', position)
+		)
 	}
 
-	initialize(avatar: Avatar, thickness: number): void {
-		this.#avatar = avatar
-
-		this.#generateTiles(thickness)
-	}
-
-	#generateTiles = (thickness: number) => {
+	generateTiles(thickness: number): void {
 		for (let x = 0; x < this.#grid.length; x++) {
 			const row = this.#grid[x]
 
@@ -38,38 +53,8 @@ export default class TileMap extends Container {
 
 				this.#tiles.push(tile)
 				this.addChild(tile.container)
-
-				tile.setupEventHandlers({
-					onTileClick: this.#handleTileClick,
-					onTileHover: this.#handleTileHover,
-					onTileHoverEnd: this.#handleTileHoverEnd,
-					onTileFaceRightClick: this.#handleTileFaceRightClick
-				})
+				this.#setupTileEvents(tile)
 			}
-		}
-	}
-
-	#handleTileClick = async (position: Point3D) =>
-		selectedCube.value
-			? this.emit('place-cube', position, selectedCube.value.size)
-			: this.#avatar?.moveTo(position)
-
-	#handleTileHover = (position: Point3D) => {
-		this.emit('show-blueprint', position, selectedCube.value?.size)
-		this.emit('disable-cubes')
-	}
-
-	#handleTileHoverEnd = () => {
-		this.emit('hide-blueprint')
-		this.emit('enable-cubes')
-	}
-
-	#handleTileFaceRightClick = (key: FaceKey, hexColor: number) => {
-		const numericColor = parseInt(hexColor.toString().replace('#', ''), 16)
-
-		for (let i = 0; i < this.#tiles.length; i++) {
-			const tile = this.#tiles[i]
-			tile.container?.faces.get(key)?.draw(numericColor)
 		}
 	}
 
@@ -81,6 +66,47 @@ export default class TileMap extends Container {
 
 	findTileByPositionInBounds = (position: Point): Tile | undefined =>
 		this.#tiles.find(tile => tile.isPositionWithinBounds(position))
+
+	setupAvatarMovement(avatar: Avatar): this {
+		this.on('tile-clicked', position => avatar.moveTo(position))
+
+		return this
+	}
+
+	setupCameraHoverTracking(camera: Camera): void {
+		const cameraTrackingManager = new CameraTrackingManager(
+			camera.viewport,
+			(position: Point) => this.#updateHoverFromPointerPosition(position),
+			() => this.#hoverManager.clearHover()
+		)
+
+		cameraTrackingManager.setup()
+	}
+
+	#setupTileEvents = (tile: Tile) =>
+		tile.container
+			.on('tile:click', (position: Point3D) =>
+				this.#eventHandlers.handleTileClick(position)
+			)
+			.on('tile:hover', (position: Point3D) => {
+				const hoveredTile = this.findTileByExactPosition(position)
+				if (hoveredTile) this.#hoverManager.setHoveredTile(hoveredTile)
+			})
+			.on('tile:hoverEnd', () => this.#hoverManager.clearHover())
+			.on('tile:face-right-click', (key: FaceKey, hexColor: number) =>
+				this.#eventHandlers.handleFaceRightClick(
+					key,
+					hexColor,
+					this.#tiles
+				)
+			)
+
+	#updateHoverFromPointerPosition(pointerPosition: Point): void {
+		const tileUnderPointer =
+			this.findTileByPositionInBounds(pointerPosition)
+
+		this.#hoverManager.setHoveredTile(tileUnderPointer)
+	}
 
 	get grid(): number[][] {
 		return this.#grid

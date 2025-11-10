@@ -1,5 +1,4 @@
 import { Point } from 'pixi.js'
-import { Point3D } from '@/core/utils/coordinates'
 import { TILE_DIMENSIONS } from '@/core/modules/tile/constants'
 
 export const AVATAR_COLORS = {
@@ -18,6 +17,10 @@ export const AVATAR_OFFSETS: Point = new Point(
 	TILE_DIMENSIONS.height / 2
 )
 
-export const AVATAR_INITIAL_POSITION: Point3D = new Point3D(0, 0, 0)
-
-export const AVATAR_SPEED: number = 1
+export const AVATAR_MOVEMENT = {
+	GRAVITY: 2.5,
+	BASE_SPEED: 1.0,
+	STRAIGHT_SPEED: 1.2,
+	MAX_FALL_SPEED: 3.0,
+	DOWNWARD_ACCELERATION: 1.5
+}

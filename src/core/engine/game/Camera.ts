@@ -1,4 +1,4 @@
-import { Application } from 'pixi.js'
+import { Application, ObservablePoint, Rectangle } from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
 
 import { MAX_ZOOM, MININUM_ZOOM } from '@/core/engine/game/constants'
@@ -22,13 +22,43 @@ export default class Camera {
 		this.#setupEventListeners()
 	}
 
-	#setupEventListeners() {
-		this.#viewport.on('pointerdown', async event => {
-			const { selectedCube } = await import('@/ui/store/inventory')
+	center = (screen: Rectangle): ObservablePoint =>
+		this.#viewport.position.set(screen.width / 2, screen.height / 2)
 
-			if (selectedCube.value && event.target === this.#viewport)
-				selectedCube.value = null
-		})
+	#setupEventListeners() {
+		let wheelTimer: ReturnType<typeof setTimeout> | undefined
+
+		this.#viewport
+			.on('pointerdown', async event => {
+				const { selectedCube } = await import('@/ui/store/inventory')
+
+				if (selectedCube.value && event.target === this.#viewport)
+					selectedCube.value = null
+			})
+			.on(
+				'drag-start',
+				() => (this.#viewport.interactiveChildren = false)
+			)
+			.on('drag-end', () =>
+				setTimeout(() => (this.#viewport.interactiveChildren = true), 0)
+			)
+			.on(
+				'pinch-start',
+				() => (this.#viewport.interactiveChildren = false)
+			)
+			.on('pinch-end', () =>
+				setTimeout(() => (this.#viewport.interactiveChildren = true), 0)
+			)
+			.on('wheel', () => {
+				this.#viewport.interactiveChildren = false
+
+				if (wheelTimer) clearTimeout(wheelTimer)
+
+				wheelTimer = setTimeout(
+					() => (this.#viewport.interactiveChildren = true),
+					150
+				)
+			})
 	}
 
 	get viewport(): Viewport {

@@ -4,7 +4,8 @@ import PathNode from './PathNode'
 
 import type { TileMap, CubeLayer } from '@/core/modules'
 
-import { Point3D, isValidTilePosition } from '@/core/utils'
+import { Point3D } from '@/core/utils'
+import { isValidTilePosition } from '@/core/modules/tile'
 
 import {
 	calculateGCost,
@@ -23,6 +24,16 @@ type PathfindingContext = {
 export type RequiredPathfindingContext = {
 	tileMap: TileMap
 	cubeLayer: CubeLayer
+}
+
+type ProcessNeighborNodeParams = {
+	context: RequiredPathfindingContext
+	neighborNode: PathNode
+	currentNode: PathNode
+	openList: Heap<PathNode>
+	openMap: Map<string, PathNode>
+	closedSet: Set<string>
+	goal: Point3D
 }
 
 export default class Pathfinder {
@@ -46,10 +57,11 @@ export default class Pathfinder {
 
 		if (!isValidInput) return null
 
-		const [openList, closedList] = [
-			new Heap<PathNode>((a, b) => a.fCost - b.fCost),
-			new Set<PathNode>()
-		]
+		const openList = new Heap<PathNode>((a, b) =>
+			a.fCost === b.fCost ? b.gCost - a.gCost : a.fCost - b.fCost
+		)
+		const openMap = new Map<string, PathNode>()
+		const closedSet = new Set<string>()
 
 		const startNode = new PathNode(start)
 		startNode.fCost = start.distanceTo(goal)
@@ -58,20 +70,27 @@ export default class Pathfinder {
 
 		openList.add(startNode)
 
+		const startKey = this.#getPositionKey(start)
+		openMap.set(startKey, startNode)
+
 		while (!openList.isEmpty()) {
 			const currentNode = openList.pop()
 
 			if (!currentNode) continue
 
-			const isCurrentNodeInClosedList = [...closedList].some(node =>
-				node.position.equals(currentNode.position)
-			)
+			const currentKey = this.#getPositionKey(currentNode.position)
 
-			if (isCurrentNodeInClosedList) continue
+			if (closedSet.has(currentKey)) continue
+
+			// Skip outdated heap entries (a newer/better node for this position exists)
+			const mapped = openMap.get(currentKey)
+
+			if (mapped && mapped !== currentNode) continue
 
 			updateNodeHeight(currentNode, context)
 
-			closedList.add(currentNode)
+			closedSet.add(currentKey)
+			openMap.delete(currentKey)
 
 			if (currentNode.fCost < closestNode.fCost) closestNode = currentNode
 
@@ -93,6 +112,8 @@ export default class Pathfinder {
 					neighborNode: neighborPathNode,
 					currentNode: currentNode,
 					openList,
+					openMap,
+					closedSet,
 					goal
 				})
 			)
@@ -106,15 +127,14 @@ export default class Pathfinder {
 		neighborNode,
 		currentNode,
 		openList,
+		openMap,
+		closedSet,
 		goal
-	}: {
-		context: RequiredPathfindingContext
-		neighborNode: PathNode
-		currentNode: PathNode
-		openList: Heap<PathNode>
-		goal: Point3D
-	}): void {
+	}: ProcessNeighborNodeParams): void {
 		updateNodeHeight(neighborNode, context)
+
+		const neighborKey = this.#getPositionKey(neighborNode.position)
+		if (closedSet.has(neighborKey)) return
 
 		if (
 			isObstacle(context, neighborNode, currentNode) ||
@@ -126,9 +146,7 @@ export default class Pathfinder {
 		const hCost = neighborNode.position.distanceTo(goal)
 		const fCost = gCost + hCost
 
-		const existingNode = openList
-			.toArray()
-			.find(node => node.position.equals(neighborNode.position))
+		const existingNode = openMap.get(neighborKey)
 
 		if (existingNode && fCost >= existingNode.fCost) return
 
@@ -136,6 +154,10 @@ export default class Pathfinder {
 		neighborNode.fCost = fCost
 		neighborNode.parent = currentNode
 
+		openMap.set(neighborKey, neighborNode)
 		openList.push(neighborNode)
 	}
+
+	static #getPositionKey = (position: Point3D): string =>
+		`${position.x},${position.y},${position.z}`
 }

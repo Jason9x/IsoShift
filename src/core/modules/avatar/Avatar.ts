@@ -1,16 +1,15 @@
+import { Ticker } from 'pixi.js'
+
 import { AvatarMovementController } from './AvatarMovementController'
 
-import { Tile, TileMap, CubeLayer, AvatarContainer } from '@/core/modules'
-
 import {
-	Point3D,
-	cartesianToIsometric,
-	findClosestValidTilePosition,
-	createColorInput,
-	calculateInitialAvatarPosition
-} from '@/core/utils'
+	findInitialTilePosition,
+	findTileForPosition,
+	calculatePositionOnTile
+} from './helpers'
 
-import { AVATAR_OFFSETS } from '@/core/modules/avatar/constants'
+import { AvatarContainer, Tile, TileMap, CubeLayer } from '@/core/modules'
+import { Point3D, cartesianToIsometric, createColorInput } from '@/core/utils'
 
 export default class Avatar {
 	readonly #position: Point3D
@@ -23,91 +22,82 @@ export default class Avatar {
 
 	constructor() {
 		this.#position = new Point3D(0, 0, 0)
-
-		const isometricPosition = cartesianToIsometric(this.#position)
-
-		this.#container = new AvatarContainer(isometricPosition)
+		this.#container = new AvatarContainer(
+			cartesianToIsometric(this.#position)
+		)
 		this.#movementController = new AvatarMovementController(this)
 	}
 
-	initialize(tileMap: TileMap, cubeLayer: CubeLayer): void {
+	initialize(
+		tileMap: TileMap,
+		cubeLayer: CubeLayer,
+		doorPosition?: Point3D
+	): void {
 		this.#tileMap = tileMap
 		this.#cubeLayer = cubeLayer
 
-		this.#movementController.initialize()
-		this.#setInitialPosition(tileMap)
+		this.#setInitialPosition(doorPosition)
+		this.#setupEventListeners()
+		this.#startTicker()
+		this.#container.on('removed', this.#stopTicker, this)
+	}
 
+	moveTo = async (goal: Point3D): Promise<void> =>
+		await this.#movementController.moveTo(goal)
+
+	update = async (delta: number): Promise<void> =>
+		await this.#movementController.update(delta)
+
+	updatePosition(position: Point3D): void {
+		this.#position.copyFrom(position)
+		this.#container.position.set(position.x, position.y - position.z)
+	}
+
+	#setInitialPosition(doorPosition?: Point3D): void {
+		if (!this.#tileMap) return
+
+		const tilePosition = findInitialTilePosition(
+			this.#tileMap,
+			this.#cubeLayer,
+			doorPosition
+		)
+
+		const tile = findTileForPosition(this.#tileMap, tilePosition)
+
+		if (tile) {
+			this.#currentTile = tile
+			this.#updatePositionFromCurrentTile()
+		}
+	}
+
+	#updatePositionFromCurrentTile(): void {
+		if (!this.#currentTile) return
+
+		const position = calculatePositionOnTile(
+			this.#currentTile.position,
+			this.#cubeLayer
+		)
+		this.updatePosition(position)
+	}
+
+	#setupEventListeners = (): void =>
 		this.#container.faces.forEach(face =>
 			face?.on('rightdown', () =>
 				createColorInput(hexColor => face.draw(hexColor))
 			)
 		)
-	}
 
-	async moveTo(goal: Point3D): Promise<void> {
-		await this.#movementController.moveTo(goal)
-	}
-
-	async update(delta: number): Promise<void> {
-		await this.#movementController.update(delta)
-	}
-
-	updateAvatarPosition(position: Point3D): void {
-		this.#position.copyFrom(position)
-		this.#container.position.set(position.x, position.y - position.z)
-	}
-
-	#setInitialPosition(tileMap: TileMap): void {
-		const initialAvatarPosition = calculateInitialAvatarPosition(tileMap)
-		const tilePosition = initialAvatarPosition.subtract(AVATAR_OFFSETS)
-
-		this.#position.copyFrom(initialAvatarPosition)
-
-		if (!this.#tileMap) return
-
-		this.#currentTile = this.#tileMap.findTileByExactPosition(tilePosition)
-
-		if (this.#currentTile) {
-			this.#updateAvatarPositionFromCurrentTile()
-			return
-		}
-
-		const validPosition = findClosestValidTilePosition(
-			tilePosition,
-			this.#tileMap.grid
+	#startTicker = () =>
+		Ticker.shared.add(
+			(ticker: Ticker) => this.update(ticker.deltaTime),
+			this
 		)
 
-		if (!validPosition) return
-
-		const isometricPosition = cartesianToIsometric(validPosition)
-
-		this.#currentTile =
-			this.#tileMap.findTileByExactPosition(isometricPosition)
-
-		this.#updateAvatarPositionFromCurrentTile()
-	}
-
-	#updateAvatarPositionFromCurrentTile(): void {
-		if (!this.#currentTile) return
-
-		const positionOnTile = this.#getPositionOnTile(
-			this.#currentTile.position
+	#stopTicker = () =>
+		Ticker.shared.remove(
+			(ticker: Ticker) => this.update(ticker.deltaTime),
+			this
 		)
-
-		this.updateAvatarPosition(positionOnTile)
-	}
-
-	#getPositionOnTile(tilePosition: Point3D): Point3D {
-		const position = tilePosition.add(AVATAR_OFFSETS)
-
-		if (!this.#cubeLayer) return position
-
-		const tallestCube = this.#cubeLayer.findTallestCubeAt(tilePosition)
-
-		if (tallestCube) position.z = tallestCube.position.z + tallestCube.size
-
-		return position
-	}
 
 	get position(): Point3D {
 		return this.#position
@@ -129,7 +119,11 @@ export default class Avatar {
 		return this.#currentTile
 	}
 
-	set currentTile(value: Tile | undefined) {
+	set currentTile(value: Tile) {
+		if (this.#currentTile === value) return
+
 		this.#currentTile = value
+
+		if (value) this.#updatePositionFromCurrentTile()
 	}
 }

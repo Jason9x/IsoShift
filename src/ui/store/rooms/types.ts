@@ -1,6 +1,7 @@
 export type CubeData = {
 	position: { x: number; y: number; z: number }
 	size: number
+	flipped?: boolean // Whether the cube is flipped horizontally
 	colors?: {
 		top?: number
 		left?: number
@@ -17,6 +18,7 @@ export type Room = {
 	tileThickness: number
 	wallsVisible: boolean
 	cubes: CubeData[]
+	door?: { x: number; y: number; z: number }
 }
 
 export const DEFAULT_ROOM: Room = {
@@ -34,6 +36,7 @@ export const DEFAULT_ROOM: Room = {
 	wallThickness: 1,
 	tileThickness: 6,
 	wallsVisible: true,
+	door: { x: 0, y: 0, z: 0 },
 	cubes: [
 		{ position: { x: 2, y: 0, z: 0 }, size: 32 },
 		{ position: { x: 3, y: 0, z: 0 }, size: 32 },
@@ -55,6 +58,7 @@ export const ROOM_TEMPLATES: Room[] = [
 		wallThickness: 3,
 		tileThickness: 3,
 		wallsVisible: true,
+		door: { x: 0, y: 0, z: 0 },
 		cubes: []
 	},
 	{
@@ -67,6 +71,7 @@ export const ROOM_TEMPLATES: Room[] = [
 		wallThickness: 4,
 		tileThickness: 4,
 		wallsVisible: true,
+		door: { x: 0, y: 0, z: 0 },
 		cubes: []
 	},
 	{
@@ -79,6 +84,7 @@ export const ROOM_TEMPLATES: Room[] = [
 		wallThickness: 5,
 		tileThickness: 5,
 		wallsVisible: true,
+		door: { x: 0, y: 0, z: 0 },
 		cubes: []
 	},
 	{
@@ -91,6 +97,7 @@ export const ROOM_TEMPLATES: Room[] = [
 		wallThickness: 6,
 		tileThickness: 6,
 		wallsVisible: true,
+		door: { x: 0, y: 0, z: 0 },
 		cubes: []
 	}
 ]
