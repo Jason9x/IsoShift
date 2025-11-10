@@ -1,0 +1,31 @@
+{
+	"root": true,
+	"env": {
+		"browser": true,
+		"es2022": true,
+		"node": true
+	},
+	"parser": "@typescript-eslint/parser",
+	"plugins": ["@typescript-eslint"],
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/recommended",
+		"plugin:prettier/recommended"
+	],
+	"parserOptions": {
+		"ecmaVersion": 2022,
+		"sourceType": "module"
+	},
+	"overrides": [
+		{
+			"files": ["src/**/*.{ts,tsx}", "*.ts", "*.tsx"],
+			"rules": {
+				"arrow-body-style": [
+					"error",
+					"as-needed",
+					{ "requireReturnForObjectLiteral": true }
+				]
+			}
+		}
+	]
+}
