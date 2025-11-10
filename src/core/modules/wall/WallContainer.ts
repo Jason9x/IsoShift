@@ -12,7 +12,8 @@ export default class WallContainer extends Container {
 		direction: WallDirection,
 		grid: number[][],
 		height: number,
-		thickness: number
+		thickness: number,
+		colors?: { top?: number; left?: number; right?: number }
 	) {
 		super()
 
@@ -24,7 +25,8 @@ export default class WallContainer extends Container {
 			direction,
 			height,
 			thickness,
-			grid
+			grid,
+			colors
 		)
 
 		this.#sides = [side]

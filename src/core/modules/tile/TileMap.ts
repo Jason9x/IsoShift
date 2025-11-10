@@ -39,7 +39,14 @@ export default class TileMap extends Container {
 		)
 	}
 
-	generateTiles(thickness: number): void {
+	generateTiles(
+		thickness: number,
+		colors?: {
+			surface?: number
+			leftBorder?: number
+			rightBorder?: number
+		}
+	): void {
 		for (let x = 0; x < this.#grid.length; x++) {
 			const row = this.#grid[x]
 
@@ -49,7 +56,13 @@ export default class TileMap extends Container {
 				if (z === -1) continue
 
 				const position = new Point3D(x, y, z)
-				const tile = new Tile(position, this.#grid, thickness)
+				const tile = new Tile(
+					position,
+					this.#grid,
+					thickness,
+					this,
+					colors
+				)
 
 				this.#tiles.push(tile)
 				this.addChild(tile.container)
@@ -57,6 +70,9 @@ export default class TileMap extends Container {
 			}
 		}
 	}
+
+	applyFaceColorToAllTiles = (face: FaceKey, color: number): void =>
+		this.#tiles.forEach(tile => tile.applyFaceColor(face, color))
 
 	getGridValue = (position: Point): number =>
 		this.#grid[position.x]?.[position.y] ?? -1
@@ -93,13 +109,6 @@ export default class TileMap extends Container {
 				if (hoveredTile) this.#hoverManager.setHoveredTile(hoveredTile)
 			})
 			.on('tile:hoverEnd', () => this.#hoverManager.clearHover())
-			.on('tile:face-right-click', (key: FaceKey, hexColor: number) =>
-				this.#eventHandlers.handleFaceRightClick(
-					key,
-					hexColor,
-					this.#tiles
-				)
-			)
 
 	#updateHoverFromPointerPosition(pointerPosition: Point): void {
 		const tileUnderPointer =

@@ -1,12 +1,24 @@
 export type CubeData = {
 	position: { x: number; y: number; z: number }
 	size: number
-	flipped?: boolean // Whether the cube is flipped horizontally
+	flipped?: boolean
 	colors?: {
 		top?: number
 		left?: number
 		right?: number
 	}
+}
+
+export type TileColors = {
+	surface?: number
+	leftBorder?: number
+	rightBorder?: number
+}
+
+export type AvatarColors = {
+	top?: number
+	left?: number
+	right?: number
 }
 
 export type Room = {
@@ -19,6 +31,9 @@ export type Room = {
 	wallsVisible: boolean
 	cubes: CubeData[]
 	door?: { x: number; y: number; z: number }
+	tileColors?: TileColors
+	wallColors?: { top?: number; left?: number; right?: number }
+	avatarColors?: AvatarColors
 }
 
 export const DEFAULT_ROOM: Room = {

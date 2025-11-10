@@ -1,7 +1,7 @@
 import { FederatedPointerEvent, Point } from 'pixi.js'
 
 import { Tile, CubeContainer } from '@/core/modules'
-import { Point3D, createColorInput } from '@/core/utils'
+import { Point3D, type FaceKey } from '@/core/utils'
 
 export enum DragState {
 	Idle = 'idle',
@@ -22,13 +22,14 @@ export class Cube {
 		position: Point3D,
 		size: number,
 		currentTile: Tile,
-		flipped: boolean = false
+		flipped: boolean = false,
+		colors?: { top?: number; left?: number; right?: number }
 	) {
 		this.#position = position
 		this.#size = size
 		this.#flipped = flipped
 		this.#currentTile = currentTile
-		this.#container = new CubeContainer(position, size)
+		this.#container = new CubeContainer(position, size, colors)
 
 		this.#applyFlip()
 		this.#setupEventListeners()
@@ -54,11 +55,13 @@ export class Cube {
 	}
 
 	#setupEventListeners(): void {
-		this.#container.faces.forEach(face =>
-			face?.on('rightdown', () =>
-				createColorInput(hexColor => face.draw(hexColor))
+		this.#container.faces.forEach((face, key) => {
+			if (!face || !this.#currentTile) return
+
+			face.on('rightdown', (event: FederatedPointerEvent) =>
+				this.#handleFaceRightClick(key, event.global)
 			)
-		)
+		})
 
 		this.#container
 			.on('pointerdown', this.#handlePointerDown.bind(this))
@@ -68,6 +71,34 @@ export class Cube {
 			.on('pointerup', this.#handleDragEnd.bind(this))
 			.on('pointerupoutside', this.#handleDragEnd.bind(this))
 	}
+
+	async #handleFaceRightClick(
+		face: FaceKey,
+		globalPosition: Point
+	): Promise<void> {
+		if (!this.#currentTile) return
+
+		const { colorMenuState } = await import('@/ui/store/colorMenu')
+		const { setCubeColor } = await import('@/ui/store/colors')
+
+		const position = this.#currentTile.position
+
+		colorMenuState.value = {
+			x: globalPosition.x,
+			y: globalPosition.y,
+			type: 'cube',
+			entityId: `${position.x},${position.y},${position.z}`,
+			faceKey: face,
+			onColorChange: (color: number) => {
+				setCubeColor(position, face, color)
+
+				this.#container.applyFaceColor(face, color)
+			}
+		}
+	}
+
+	applyFaceColor = (face: FaceKey, color: number): void =>
+		this.#container.applyFaceColor(face, color)
 
 	async #handlePointerDown(event: FederatedPointerEvent) {
 		if (event.button !== 0) return

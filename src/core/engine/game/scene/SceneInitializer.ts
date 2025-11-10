@@ -3,7 +3,7 @@ import Camera from '../Camera'
 import { TileMap, WallMap, CubeLayer, Avatar } from '@/core/modules'
 import { Point3D } from '@/core/utils/coordinates'
 
-import type { CubeData } from '@/ui/store/rooms'
+import type { CubeData, TileColors, AvatarColors } from '@/ui/store/rooms'
 
 export type RoomConfig = {
 	grid: number[][]
@@ -13,6 +13,9 @@ export type RoomConfig = {
 	wallThickness: number
 	wallsVisible: boolean
 	door?: { x: number; y: number; z: number }
+	tileColors?: TileColors
+	wallColors?: { top?: number; left?: number; right?: number }
+	avatarColors?: AvatarColors
 }
 
 export type Scene = {
@@ -29,16 +32,19 @@ export const createScene = (config: RoomConfig, camera: Camera): Scene => {
 		wallHeight,
 		wallThickness,
 		wallsVisible,
-		door
+		door,
+		tileColors,
+		wallColors,
+		avatarColors
 	} = config
 
 	const wallMap = new WallMap(wallsVisible)
 	const tileMap = new TileMap(grid)
 	const cubeLayer = new CubeLayer(cubes)
-	const avatar = new Avatar()
+	const avatar = new Avatar(avatarColors)
 
-	tileMap.generateTiles(tileThickness)
-	wallMap.generateFromGrid(grid, wallHeight, wallThickness)
+	tileMap.generateTiles(tileThickness, tileColors)
+	wallMap.generateFromGrid(grid, wallHeight, wallThickness, wallColors)
 
 	const doorPosition = door ? new Point3D(door.x, door.y, door.z) : undefined
 

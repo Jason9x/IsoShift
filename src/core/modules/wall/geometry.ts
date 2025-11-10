@@ -17,7 +17,8 @@ export const createWallSide = (
 	direction: WallDirection,
 	height: number,
 	thickness: number,
-	grid: number[][]
+	grid: number[][],
+	wallColors?: { top?: number; left?: number; right?: number }
 ): BoxFaces => {
 	const isLeft = direction === WallDirection.Left
 	const coordinates = getWallCoordinates(isLeft, height, thickness)
@@ -26,8 +27,16 @@ export const createWallSide = (
 	const isAtLeftBorder = position.x === 0 && position.y === grid.length
 	const isAtRightBorder = position.y === 0 && position.x === grid.length - 1
 
-	const faceConfig: Array<[FaceKey, number, number[], string[]]> = [
-		['top', styles.surface, coordinates.surface, ['left', 'right']],
+	const faceConfig: Array<
+		[FaceKey, number, number[], string[], number | undefined]
+	> = [
+		[
+			'top',
+			styles.surface,
+			coordinates.surface,
+			['left', 'right'],
+			wallColors?.top
+		],
 		[
 			'left',
 			styles.front,
@@ -37,7 +46,8 @@ export const createWallSide = (
 				'bottom',
 				'right',
 				...(isAtLeftBorder || isAtRightBorder ? ['left'] : [])
-			]
+			],
+			wallColors?.left
 		],
 		[
 			'right',
@@ -48,15 +58,16 @@ export const createWallSide = (
 				'bottom',
 				...(isAtLeftBorder ? ['left'] : []),
 				...(isAtRightBorder ? ['right'] : [])
-			]
+			],
+			wallColors?.right
 		]
 	]
 
 	return new Map(
-		faceConfig.map(([key, color, coords, borders]) => [
+		faceConfig.map(([key, defaultColor, coords, borders, customColor]) => [
 			key,
 			new PolygonGraphics(
-				color,
+				customColor ?? defaultColor,
 				coords,
 				0x000000,
 				1,

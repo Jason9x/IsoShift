@@ -6,7 +6,7 @@ import {
 	type FaceInitOptions
 } from './geometry'
 
-import { Point3D, type BoxFaces } from '@/core/utils'
+import { Point3D, type BoxFaces, type FaceKey } from '@/core/utils'
 
 export default class TileContainer extends Container {
 	readonly #faces: BoxFaces
@@ -16,12 +16,18 @@ export default class TileContainer extends Container {
 	constructor(
 		position: Point3D,
 		hasBorders: boolean[],
-		tileThickness: number
+		tileThickness: number,
+		colors?: { surface?: number; leftBorder?: number; rightBorder?: number }
 	) {
 		super()
 
 		this.position.set(position.x, position.y - position.z)
-		this.#faces = this.#createFaces(position, hasBorders, tileThickness)
+		this.#faces = this.#createFaces(
+			position,
+			hasBorders,
+			tileThickness,
+			colors
+		)
 		this.#faces.forEach(face => face && this.addChild(face))
 		this.eventMode = 'static'
 	}
@@ -29,7 +35,8 @@ export default class TileContainer extends Container {
 	#createFaces(
 		position: Point3D,
 		hasBorders: boolean[],
-		thickness: number
+		thickness: number,
+		colors?: { surface?: number; leftBorder?: number; rightBorder?: number }
 	): BoxFaces {
 		const [hasLeftBorder, hasRightBorder] = hasBorders
 		const coordinates = getTileCoordinates(thickness)
@@ -41,7 +48,13 @@ export default class TileContainer extends Container {
 			isAtFirstRow: position.y === 0
 		}
 
-		return createTileFaces(config, coordinates)
+		return createTileFaces(config, coordinates, colors)
+	}
+
+	applyFaceColor(face: FaceKey, color: number): void {
+		const faceGraphics = this.#faces.get(face)
+
+		faceGraphics?.draw(color)
 	}
 
 	createHoverEffect(): void {

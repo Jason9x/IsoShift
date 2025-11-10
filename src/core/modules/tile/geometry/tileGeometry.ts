@@ -55,7 +55,8 @@ export const getTileCoordinates = (thickness: number): TileCoordinates => {
 
 export const createTileFaces = (
 	options: FaceInitOptions,
-	coordinates: TileCoordinates
+	coordinates: TileCoordinates,
+	colors?: { surface?: number; leftBorder?: number; rightBorder?: number }
 ): BoxFaces => {
 	const { hasLeftBorder, hasRightBorder, isAtFirstColumn, isAtFirstRow } =
 		options
@@ -66,7 +67,8 @@ export const createTileFaces = (
 			typeof TILE_STYLES.surface,
 			number[],
 			ReturnType<typeof tileBorderPresets.surface>,
-			boolean
+			boolean,
+			number | undefined
 		]
 	> = [
 		[
@@ -79,30 +81,33 @@ export const createTileFaces = (
 				hasLeftBorder,
 				hasRightBorder
 			),
-			true
+			true,
+			colors?.surface
 		],
 		[
 			'left',
 			TILE_STYLES.leftBorder,
 			coordinates.leftBorder,
 			tileBorderPresets.border(),
-			hasLeftBorder
+			hasLeftBorder,
+			colors?.leftBorder
 		],
 		[
 			'right',
 			TILE_STYLES.rightBorder,
 			coordinates.rightBorder,
 			tileBorderPresets.border(),
-			hasRightBorder
+			hasRightBorder,
+			colors?.rightBorder
 		]
 	]
 
 	return new Map(
-		faceConfig.map(([key, style, coords, borders, shouldCreate]) => [
+		faceConfig.map(([key, style, coords, borders, shouldCreate, color]) => [
 			key,
 			shouldCreate
 				? new PolygonGraphics(
-						style.fillColor,
+						color ?? style.fillColor,
 						coords,
 						style.borderColor,
 						style.borderWidth,

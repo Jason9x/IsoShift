@@ -23,7 +23,8 @@ export class CubeManager {
 	createCubeAtPosition(
 		position: Point3D,
 		size: number,
-		flipped: boolean = false
+		flipped: boolean = false,
+		colors?: { top?: number; left?: number; right?: number }
 	): Cube | null {
 		const validSize = Math.max(8, Math.min(size, TILE_DIMENSIONS.height))
 		const tilePosition = cartesianToIsometric(position)
@@ -38,7 +39,7 @@ export class CubeManager {
 			tallestCubeAtTile
 		)
 
-		return new Cube(finalPosition, validSize, currentTile, flipped)
+		return new Cube(finalPosition, validSize, currentTile, flipped, colors)
 	}
 
 	getValidTilePosition(position: Point3D): Point3D | null {

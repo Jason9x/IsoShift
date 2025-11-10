@@ -1,8 +1,8 @@
 import { Container } from 'pixi.js'
 
-import { Wall, WallDirection } from '@/core/modules/wall'
-import type { TileMap } from '@/core/modules'
-import { Point3D } from '@/core/utils'
+import { Wall, WallDirection, WallContainer, TileMap } from '@/core/modules'
+
+import { Point3D, type FaceKey } from '@/core/utils'
 
 export default class WallMap extends Container {
 	constructor(visible: boolean) {
@@ -14,7 +14,8 @@ export default class WallMap extends Container {
 	generateFromGrid(
 		grid: number[][],
 		height: number,
-		thickness: number
+		thickness: number,
+		colors?: { top?: number; left?: number; right?: number }
 	): WallMap {
 		for (let x = 0; x < grid.length; x++) {
 			const row = grid[x]
@@ -34,7 +35,9 @@ export default class WallMap extends Container {
 						direction,
 						grid,
 						height,
-						thickness
+						thickness,
+						this,
+						colors
 					)
 
 					this.addWall(wall)
@@ -48,12 +51,16 @@ export default class WallMap extends Container {
 	addWall(wall: Wall): void {
 		this.addChild(wall.container)
 
-		// wall.container.on(
-		// 	'wall-face-right-clicked',
-		// 	this.#handleWallFaceRightClick
-		// )
-
 		wall.container.on('deselect-cube', () => this.emit('deselect-cube'))
+	}
+
+	applyFaceColorToAllWalls = (face: FaceKey, color: number): void => {
+		this.children.forEach(child => {
+			if (!(child instanceof WallContainer)) return
+
+			const faceGraphics = child.sides[0]?.get(face)
+			faceGraphics?.draw(color)
+		})
 	}
 
 	setupTileMapEvents = (tileMap: TileMap): WallMap =>
@@ -69,19 +76,4 @@ export default class WallMap extends Container {
 
 		return []
 	}
-
-	// #handleWallFaceRightClick = (
-	// 	direction: WallDirection,
-	// 	key: FaceKey,
-	// 	hexColor: string
-	// ) => {
-	// 	const numericColor = parseInt(hexColor.replace('#', ''), 16)
-
-	// 	this.#walls.forEach(wall => {
-	// 		if (wall.direction === direction)
-	// 			wall.container.sides.forEach(side =>
-	// 				side.get(key)?.draw(numericColor)
-	// 			)
-	// 	})
-	// }
 }

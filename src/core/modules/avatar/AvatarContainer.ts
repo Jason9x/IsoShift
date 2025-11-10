@@ -5,12 +5,20 @@ import {
 	AVATAR_DIMENSIONS
 } from '@/core/modules/avatar/constants'
 
-import { PolygonGraphics, type BoxFaces, Point3D } from '@/core/utils'
+import {
+	PolygonGraphics,
+	type BoxFaces,
+	Point3D,
+	type FaceKey
+} from '@/core/utils'
 
 export default class AvatarContainer extends Container {
 	readonly #faces: BoxFaces
 
-	constructor(position: Point3D) {
+	constructor(
+		position: Point3D,
+		colors?: { top?: number; left?: number; right?: number }
+	) {
 		super()
 
 		this.position.set(position.x, position.y - position.z)
@@ -20,7 +28,7 @@ export default class AvatarContainer extends Container {
 		this.#faces = new Map([
 			[
 				'top',
-				new PolygonGraphics(AVATAR_COLORS.TOP_FACE, [
+				new PolygonGraphics(colors?.top ?? AVATAR_COLORS.TOP_FACE, [
 					0,
 					-HEIGHT,
 					WIDTH,
@@ -33,7 +41,7 @@ export default class AvatarContainer extends Container {
 			],
 			[
 				'left',
-				new PolygonGraphics(AVATAR_COLORS.LEFT_FACE, [
+				new PolygonGraphics(colors?.left ?? AVATAR_COLORS.LEFT_FACE, [
 					0,
 					0,
 					0,
@@ -46,7 +54,7 @@ export default class AvatarContainer extends Container {
 			],
 			[
 				'right',
-				new PolygonGraphics(AVATAR_COLORS.RIGHT_FACE, [
+				new PolygonGraphics(colors?.right ?? AVATAR_COLORS.RIGHT_FACE, [
 					WIDTH,
 					WIDTH / 2,
 					WIDTH,
@@ -60,6 +68,12 @@ export default class AvatarContainer extends Container {
 		])
 
 		this.#faces.forEach(face => face && this.addChild(face))
+	}
+
+	applyFaceColor(face: FaceKey, color: number): void {
+		const faceGraphics = this.#faces.get(face)
+
+		faceGraphics?.draw(color)
 	}
 
 	get faces(): BoxFaces {

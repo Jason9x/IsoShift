@@ -1,6 +1,4 @@
-import type Tile from '../Tile'
-
-import type { Point3D, FaceKey } from '@/core/utils'
+import type { Point3D } from '@/core/utils'
 
 import { selectedCube } from '@/ui/store/inventory'
 
@@ -25,12 +23,5 @@ export class TileEventHandlers {
 		}
 
 		this.#onTileClicked(position)
-	}
-
-	handleFaceRightClick(key: FaceKey, hexColor: number, tiles: Tile[]): void {
-		const numericColor = parseInt(hexColor.toString().replace('#', ''), 16)
-
-		for (const tile of tiles)
-			tile.container?.faces.get(key)?.draw(numericColor)
 	}
 }

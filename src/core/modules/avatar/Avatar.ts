@@ -1,4 +1,4 @@
-import { Ticker } from 'pixi.js'
+import { Ticker, FederatedPointerEvent } from 'pixi.js'
 
 import { AvatarMovementController } from './AvatarMovementController'
 
@@ -9,7 +9,7 @@ import {
 } from './helpers'
 
 import { AvatarContainer, Tile, TileMap, CubeLayer } from '@/core/modules'
-import { Point3D, cartesianToIsometric, createColorInput } from '@/core/utils'
+import { Point3D, cartesianToIsometric, type FaceKey } from '@/core/utils'
 
 export default class Avatar {
 	readonly #position: Point3D
@@ -20,10 +20,11 @@ export default class Avatar {
 	#currentTile?: Tile
 	#cubeLayer?: CubeLayer
 
-	constructor() {
+	constructor(colors?: { top?: number; left?: number; right?: number }) {
 		this.#position = new Point3D(0, 0, 0)
 		this.#container = new AvatarContainer(
-			cartesianToIsometric(this.#position)
+			cartesianToIsometric(this.#position),
+			colors
 		)
 		this.#movementController = new AvatarMovementController(this)
 	}
@@ -77,15 +78,42 @@ export default class Avatar {
 			this.#currentTile.position,
 			this.#cubeLayer
 		)
+
 		this.updatePosition(position)
 	}
 
 	#setupEventListeners = (): void =>
-		this.#container.faces.forEach(face =>
-			face?.on('rightdown', () =>
-				createColorInput(hexColor => face.draw(hexColor))
+		this.#container.faces.forEach((face, key) => {
+			if (!face) return
+
+			face.on('rightdown', (event: FederatedPointerEvent) =>
+				this.#handleFaceRightClick(key, event.global)
 			)
-		)
+		})
+
+	async #handleFaceRightClick(
+		face: FaceKey,
+		globalPosition: { x: number; y: number }
+	): Promise<void> {
+		const { colorMenuState } = await import('@/ui/store/colorMenu')
+		const { setAvatarColor } = await import('@/ui/store/colors')
+
+		colorMenuState.value = {
+			x: globalPosition.x,
+			y: globalPosition.y,
+			type: 'avatar',
+			entityId: 'avatar',
+			faceKey: face,
+			onColorChange: (color: number) => {
+				setAvatarColor(face, color)
+
+				this.#container.applyFaceColor(face, color)
+			}
+		}
+	}
+
+	applyFaceColor = (face: FaceKey, color: number): void =>
+		this.#container.applyFaceColor(face, color)
 
 	#startTicker = () =>
 		Ticker.shared.add(

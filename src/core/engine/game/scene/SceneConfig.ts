@@ -9,7 +9,10 @@ export const createRoomConfig = (room: Room): RoomConfig => ({
 	wallHeight: room.wallHeight,
 	wallThickness: room.wallThickness,
 	wallsVisible: room.wallsVisible,
-	door: room.door
+	door: room.door,
+	tileColors: room.tileColors,
+	wallColors: room.wallColors,
+	avatarColors: room.avatarColors
 })
 
 export const createRoomKey = (config: RoomConfig): string =>

@@ -7,7 +7,8 @@ import {
 	ZoomControls,
 	WidgetBar,
 	Layout,
-	CubeMenu
+	CubeMenu,
+	ColorMenu
 } from './components'
 
 import { useWidgetState } from './hooks'
@@ -80,6 +81,7 @@ const HUD = (): JSX.Element => {
 
 			<WidgetBar onToggle={toggle} />
 			<CubeMenu />
+			<ColorMenu />
 		</div>
 	)
 }
